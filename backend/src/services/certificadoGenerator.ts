@@ -33,10 +33,20 @@ export class CertificadoGenerator {
   }
 
   async generateCertificado(data: CertificadoData): Promise<Buffer> {
-    logInfo('Iniciando generación de certificado', { dni: data.dni });
+    logInfo('Iniciando generación de certificado', { 
+      dni: data.dni,
+      data: data,
+      config: this.config
+    });
 
     return new Promise((resolve, reject) => {
       try {
+        console.log('Configurando documento PDF con tamaño:', {
+          width: this.config.width,
+          height: this.config.height,
+          margins: this.config.margins
+        });
+
         const doc = new PDFDocument({
           size: 'A4',
           margins: this.config.margins

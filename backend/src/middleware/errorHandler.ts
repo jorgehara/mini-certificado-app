@@ -60,39 +60,30 @@ export const errorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ): void => {
-  let statusCode = 500;
-  let message = 'Error interno del servidor';
-  let isOperational = false;
+  // Configuración inicial
+  const statusCode = error instanceof AppError ? error.statusCode : 500;
+  const isOperational = error instanceof AppError ? error.isOperational : false;
+  const errorMessage = error.message || 'Error interno del servidor';
 
-  // Determinar tipo de error y respuesta apropiada
-  if (error instanceof AppError) {
-    statusCode = error.statusCode;
-    message = error.message;
-    isOperational = error.isOperational;
-  } else if (error.name === 'ValidationError') {
-    statusCode = 400;
-    message = error.message;
-    isOperational = true;
-  } else if (error.name === 'CastError') {
-    statusCode = 400;
-    message = 'Formato de datos inválido';
-    isOperational = true;
-  } else if (error.name === 'MongoError' && 'code' in error && (error as Record<string, unknown>).code === 11000) {
-    statusCode = 409;
-    message = 'Recurso duplicado';
-    isOperational = true;
-  } else if (error.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Token inválido';
-    isOperational = true;
-  } else if (error.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expirado';
-    isOperational = true;
-  }
+  // Log del error
+  logError('Error en la aplicación', {
+    error: {
+      message: errorMessage,
+      name: error.name,
+      stack: error.stack
+    },
+    request: {
+      path: req.path,
+      method: req.method,
+      query: req.query,
+      body: req.body
+    },
+    statusCode,
+    isOperational
+  });
 
   // Loguear el error
-  logError(`Error ${statusCode}: ${message}`, {
+  logError(`Error ${statusCode}: ${errorMessage}`, {
     error: error.message,
     stack: error.stack,
     url: req.url,
@@ -106,8 +97,8 @@ export const errorHandler = (
   // Respuesta de error
   const response: ApiResponse = {
     success: false,
-    error: message,
-    message: statusCode >= 500 ? 'Error interno del servidor' : message
+    error: errorMessage,
+    message: statusCode >= 500 ? 'Error interno del servidor' : errorMessage
   };
 
   // En desarrollo, incluir stack trace para errores del servidor

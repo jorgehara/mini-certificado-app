@@ -17,17 +17,24 @@ export class CertificadoController {
     try {
       logInfo('Iniciando generación de certificado', { 
         ip: req.ip,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get('User-Agent'),
+        body: req.body
       });
 
       // Sanitizar datos de entrada
+      console.log('Datos originales:', req.body);
       const sanitizedData = CertificadoValidator.sanitizeData(req.body);
+      console.log('Datos sanitizados:', sanitizedData);
       
       // Validar datos
+      logInfo('Validando datos sanitizados', sanitizedData);
       const validation = CertificadoValidator.validateCertificadoData(sanitizedData);
+      console.log('Resultado de validación:', validation);
       
       if (!validation.isValid) {
-        throw new ValidationError(validation.errors?.join(', ') || 'Datos inválidos');
+        const errorMessage = validation.errors?.join(', ') || 'Datos inválidos';
+        logError('Validación fallida', { errors: validation.errors });
+        throw new ValidationError(errorMessage);
       }
 
       const certificadoData = validation.data as CertificadoData;
@@ -44,11 +51,12 @@ export class CertificadoController {
       const filename = `certificado_${certificadoData.dni}_${new Date().toISOString().split('T')[0]}.pdf`;
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Accept-Ranges', 'bytes');
 
       logInfo('Certificado generado exitosamente', {
         dni: certificadoData.dni,

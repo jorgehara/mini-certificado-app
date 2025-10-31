@@ -1,0 +1,41 @@
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import {
+  Box,
+  TextField,
+  Button,
+  Paper,
+  Typography,
+  Alert,
+  CircularProgress,
+  Container
+} from '@mui/material';
+import axios from 'axios';
+
+interface FormInputs {
+  nombre: string;
+  apellido: string;
+  dni: string;
+  codigoDiagnostico: string;
+  horasReposo: string;
+  fechaConsulta: string;
+  diagnosticoDescripcion: string;
+}
+
+export const CertificadoForm = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [previewData, setPreviewData] = useState<FormInputs | null>(null);
+
+  const { control, handleSubmit, formState: { errors } } = useForm<FormInputs>({
+    defaultValues: {
+      nombre: '',
+      apellido: '',
+      dni: '',
+      codigoDiagnostico: '',
+      horasReposo: '',
+      fechaConsulta: '',
+      diagnosticoDescripcion: ''
+    }
+  });

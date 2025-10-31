@@ -29,7 +29,7 @@ const certificadoSchema = Joi.object({
     .max(10)
     .pattern(/^[A-Z][0-9]{2,3}(\.[0-9])?$/)
     .messages({
-      'string.pattern.base': 'El código de diagnóstico debe seguir el formato ICD-10 (ej: N300, M545)',
+      'string.pattern.base': 'El código de diagnóstico debe seguir el formato CIE-10/ICD-10 (ej: A09, N300)',
       'string.empty': 'El código de diagnóstico es requerido',
       'string.max': 'El código de diagnóstico no puede exceder 10 caracteres'
     }),

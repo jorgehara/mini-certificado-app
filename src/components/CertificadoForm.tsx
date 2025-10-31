@@ -3,71 +3,42 @@ import { useForm, Controller } from 'react-hook-form';
 import {
   Box,
   TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Button,
   Paper,
   Typography,
   Alert,
   CircularProgress,
-  Container,
+  Container
 } from '@mui/material';
 import axios from 'axios';
 
 interface FormInputs {
-  textoEntrada: string;
-  horasReposo: string;
-}
-
-interface ParsedData {
-  codigoDiagnostico: string;
   nombre: string;
   apellido: string;
   dni: string;
+  codigoDiagnostico: string;
+  horasReposo: string;
+  fechaConsulta: string;
+  diagnosticoDescripcion: string;
 }
 
 export const CertificadoForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [previewData, setPreviewData] = useState<ParsedData | null>(null);
+  const [previewData, setPreviewData] = useState<FormInputs | null>(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormInputs>({
     defaultValues: {
-      textoEntrada: '',
-      horasReposo: ''
+      nombre: '',
+      apellido: '',
+      dni: '',
+      codigoDiagnostico: '',
+      horasReposo: '24',
+      fechaConsulta: new Date().toISOString().split('T')[0],
+      diagnosticoDescripcion: ''
     }
   });
-
-  const parseTextoEntrada = (texto: string): ParsedData | null => {
-    try {
-      const partes = texto.trim().split(/\s+/);
-      const codigoDiagnostico = partes[0];
-      const posicionTitular = partes.findIndex(p => p.toLowerCase() === 'titular');
-      
-      if (posicionTitular === -1) {
-        throw new Error('No se encontró la palabra "Titular" en el texto');
-      }
-
-      const dni = partes[posicionTitular + 1];
-      const nombreCompleto = partes.slice(2, posicionTitular).join(' ');
-      const ultimoEspacio = nombreCompleto.lastIndexOf(' ');
-      const apellido = nombreCompleto.substring(0, ultimoEspacio);
-      const nombre = nombreCompleto.substring(ultimoEspacio + 1);
-
-      return {
-        codigoDiagnostico,
-        nombre,
-        apellido,
-        dni
-      };
-    } catch (error) {
-      console.error('Error al parsear texto:', error);
-      return null;
-    }
-  };
 
   const onSubmit = async (data: FormInputs) => {
     setLoading(true);
@@ -75,32 +46,21 @@ export const CertificadoForm = () => {
     setSuccess(false);
 
     try {
-      const parsedData = parseTextoEntrada(data.textoEntrada);
-      if (!parsedData) {
-        throw new Error('Error al procesar el texto de entrada');
-      }
-      setPreviewData(parsedData);
+      setPreviewData(data);
 
-      const response = await axios.post('/api/certificados', {
+      const certificadoData = {
         ...data,
         horasReposo: parseInt(data.horasReposo),
-        ...parsedData
-      }, {
-        responseType: 'blob'
-      });
+      };
 
-      // Crear y descargar el PDF
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `certificado_${parsedData.dni}_${new Date().toISOString()}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      setSuccess(true);
+      const response = await axios.post('http://localhost:3001/api/generar-certificado', certificadoData);
+      
+      if (response.data.url) {
+        window.open(response.data.url, '_blank');
+        setSuccess(true);
+      }
     } catch (err) {
+      console.error('Error durante el proceso:', err);
       setError(err instanceof Error ? err.message : 'Error al generar el certificado');
     } finally {
       setLoading(false);
@@ -110,95 +70,179 @@ export const CertificadoForm = () => {
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
+        <Typography variant="h5" gutterBottom align="center">
           Generador de Certificados Médicos
         </Typography>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Controller
-              name="textoEntrada"
-              control={control}
-              rules={{ required: 'Este campo es requerido' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Texto de Entrada"
-                  multiline
-                  rows={3}
-                  error={!!errors.textoEntrada}
-                  helperText={errors.textoEntrada?.message || 'Ejemplo: N300 34040769 MUÑOZ OMAR ARIEL Titular 34040769'}
-                  placeholder="Ingrese el texto completo aquí"
-                />
-              )}
-            />
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Controller
+                name="nombre"
+                control={control}
+                rules={{ required: 'El nombre es requerido' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Nombre"
+                    error={!!errors.nombre}
+                    helperText={errors.nombre?.message}
+                    fullWidth
+                  />
+                )}
+              />
 
-            <Controller
-              name="horasReposo"
-              control={control}
-              rules={{ required: 'Debe seleccionar las horas de reposo' }}
-              render={({ field }) => (
-                <FormControl error={!!errors.horasReposo}>
-                  <InputLabel>Horas de Reposo</InputLabel>
-                  <Select
+              <Controller
+                name="apellido"
+                control={control}
+                rules={{ required: 'El apellido es requerido' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Apellido"
+                    error={!!errors.apellido}
+                    helperText={errors.apellido?.message}
+                    fullWidth
+                  />
+                )}
+              />
+            </Box>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+              <Controller
+                name="dni"
+                control={control}
+                rules={{ 
+                  required: 'El DNI es requerido',
+                  pattern: {
+                    value: /^[0-9]{7,8}$/,
+                    message: 'DNI debe tener 7 u 8 dígitos'
+                  }
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="DNI"
+                    error={!!errors.dni}
+                    helperText={errors.dni?.message}
+                    fullWidth
+                  />
+                )}
+              />
+
+              <Controller
+                name="codigoDiagnostico"
+                control={control}
+                rules={{ required: 'El código de diagnóstico es requerido' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Código Diagnóstico"
+                    error={!!errors.codigoDiagnostico}
+                    helperText={errors.codigoDiagnostico?.message || 'Ej: A099'}
+                    fullWidth
+                  />
+                )}
+              />
+
+              <Controller
+                name="horasReposo"
+                control={control}
+                rules={{ required: 'Las horas de reposo son requeridas' }}
+                render={({ field }) => (
+                  <TextField
                     {...field}
                     label="Horas de Reposo"
-                  >
-                    <MenuItem value="">Seleccione</MenuItem>
-                    <MenuItem value="24">24 horas</MenuItem>
-                    <MenuItem value="48">48 horas</MenuItem>
-                  </Select>
-                  {errors.horasReposo && (
-                    <Typography color="error" variant="caption" sx={{ mt: 1 }}>
-                      {errors.horasReposo.message}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
+                    type="number"
+                    error={!!errors.horasReposo}
+                    helperText={errors.horasReposo?.message}
+                    fullWidth
+                    InputProps={{ inputProps: { min: 1, max: 168 } }}
+                  />
+                )}
+              />
+            </Box>
 
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              size="large"
-              sx={{ mt: 2 }}
-            >
-              {loading ? (
-                <>
-                  <CircularProgress size={24} sx={{ mr: 1 }} />
-                  Generando...
-                </>
-              ) : 'Generar Certificado'}
-            </Button>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <Controller
+                name="fechaConsulta"
+                control={control}
+                rules={{ required: 'La fecha de consulta es requerida' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Fecha de Consulta"
+                    type="date"
+                    error={!!errors.fechaConsulta}
+                    helperText={errors.fechaConsulta?.message}
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              />
+
+              <Controller
+                name="diagnosticoDescripcion"
+                control={control}
+                rules={{ required: 'La descripción del diagnóstico es requerida' }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Descripción del Diagnóstico"
+                    error={!!errors.diagnosticoDescripcion}
+                    helperText={errors.diagnosticoDescripcion?.message}
+                    multiline
+                    rows={4}
+                    fullWidth
+                  />
+                )}
+              />
+            </Box>
+
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+
+            {success && (
+              <Alert severity="success" sx={{ mt: 2 }}>
+                Certificado generado exitosamente
+              </Alert>
+            )}
+
+            {previewData && (
+              <Paper elevation={1} sx={{ p: 2, mt: 2, bgcolor: 'grey.50' }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Vista Previa:
+                </Typography>
+                <Typography>Nombre: {previewData.nombre}</Typography>
+                <Typography>Apellido: {previewData.apellido}</Typography>
+                <Typography>DNI: {previewData.dni}</Typography>
+                <Typography>Código Diagnóstico: {previewData.codigoDiagnostico}</Typography>
+                <Typography>Horas de Reposo: {previewData.horasReposo}</Typography>
+                <Typography>Fecha de Consulta: {previewData.fechaConsulta}</Typography>
+                <Typography>Descripción: {previewData.diagnosticoDescripcion}</Typography>
+              </Paper>
+            )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{ minWidth: 200 }}
+              >
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  'Generar Certificado'
+                )}
+              </Button>
+            </Box>
           </Box>
         </form>
-
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mt: 2 }}>
-            Certificado generado exitosamente
-          </Alert>
-        )}
-
-        {previewData && (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              Vista Previa de Datos
-            </Typography>
-            <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-              <Typography><strong>Código Diagnóstico:</strong> {previewData.codigoDiagnostico}</Typography>
-              <Typography><strong>Nombre:</strong> {previewData.nombre}</Typography>
-              <Typography><strong>Apellido:</strong> {previewData.apellido}</Typography>
-              <Typography><strong>DNI:</strong> {previewData.dni}</Typography>
-            </Paper>
-          </Box>
-        )}
       </Paper>
     </Container>
   );

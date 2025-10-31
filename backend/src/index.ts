@@ -32,13 +32,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Logging middleware
-app.use((req, res, next) => {
-  logInfo(`${req.method} ${req.path}`, { 
-    ip: req.ip, 
-    userAgent: req.get('User-Agent') 
-  });
-  next();
-});
+import { requestLogger } from './middleware/requestLogger.js';
+app.use(requestLogger);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
