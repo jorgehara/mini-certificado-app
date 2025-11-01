@@ -27,9 +27,9 @@ const certificadoSchema = Joi.object({
     .required()
     .min(1)
     .max(10)
-    .pattern(/^[A-Z][0-9]{2,3}(\.[0-9])?$/)
+    .pattern(/^[A-Za-z0-9][A-Za-z0-9.-]*$/)
     .messages({
-      'string.pattern.base': 'El código de diagnóstico debe seguir el formato CIE-10/ICD-10 (ej: A09, N300)',
+      'string.pattern.base': 'El código de diagnóstico debe comenzar con una letra o número',
       'string.empty': 'El código de diagnóstico es requerido',
       'string.max': 'El código de diagnóstico no puede exceder 10 caracteres'
     }),
@@ -173,9 +173,10 @@ export class CertificadoValidator {
   }
 
   private static validateDiagnosticCode(code: string): boolean {
-    // Códigos ICD-10 básicos para certificados médicos comunes
-    const commonMedicalCodes = /^[A-Z][0-9]{2}(\.[0-9])?$/;
-    return commonMedicalCodes.test(code);
+    // Validación permisiva para uso interno - acepta cualquier código alfanumérico
+    // Formato flexible: letras y números, opcionalmente con puntos o guiones
+    const flexibleMedicalCodes = /^[A-Za-z0-9][A-Za-z0-9.-]{0,9}$/;
+    return flexibleMedicalCodes.test(code) && code.trim().length > 0;
   }
 
   private static validateName(name: string): boolean {

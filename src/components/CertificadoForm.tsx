@@ -36,7 +36,7 @@ export const CertificadoForm = () => {
       codigoDiagnostico: '',
       horasReposo: '24',
       fechaConsulta: new Date().toISOString().split('T')[0],
-      diagnosticoDescripcion: ''
+      diagnosticoDescripcion: '' // Debe tener al menos 10 caracteres
     }
   });
 
@@ -51,14 +51,32 @@ export const CertificadoForm = () => {
       const certificadoData = {
         ...data,
         horasReposo: parseInt(data.horasReposo),
+        textoEntrada: data.diagnosticoDescripcion, // Agregamos el campo requerido textoEntrada
       };
 
-      const response = await axios.post('http://localhost:3001/api/generar-certificado', certificadoData);
+      const response = await axios.post('http://localhost:3001/api/certificados/generate', certificadoData, {
+        responseType: 'blob', // Importante: especificar que esperamos un blob
+      });
       
-      if (response.data.url) {
-        window.open(response.data.url, '_blank');
-        setSuccess(true);
-      }
+      // Crear un blob URL para el PDF recibido
+      const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(pdfBlob);
+      
+      // Abrir el PDF en una nueva ventana
+      window.open(url, '_blank');
+      
+      // Opcionalmente, también podemos descargar automáticamente
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `certificado_${data.dni}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Limpiar el URL después de un tiempo
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+      
+      setSuccess(true);
     } catch (err) {
       console.error('Error durante el proceso:', err);
       setError(err instanceof Error ? err.message : 'Error al generar el certificado');
@@ -133,13 +151,23 @@ export const CertificadoForm = () => {
               <Controller
                 name="codigoDiagnostico"
                 control={control}
-                rules={{ required: 'El código de diagnóstico es requerido' }}
+                rules={{ 
+                  required: 'El código de diagnóstico es requerido',
+                  pattern: {
+                    value: /^[A-Za-z0-9][A-Za-z0-9.-]*$/,
+                    message: 'Código debe empezar con letra o número (ej: N300, A09, INTERNO-001)'
+                  },
+                  maxLength: {
+                    value: 10,
+                    message: 'El código no puede exceder 10 caracteres'
+                  }
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     label="Código Diagnóstico"
                     error={!!errors.codigoDiagnostico}
-                    helperText={errors.codigoDiagnostico?.message || 'Ej: A099'}
+                    helperText={errors.codigoDiagnostico?.message || 'Ej: N300, A09, INTERNO-001'}
                     fullWidth
                   />
                 )}
@@ -184,7 +212,17 @@ export const CertificadoForm = () => {
               <Controller
                 name="diagnosticoDescripcion"
                 control={control}
-                rules={{ required: 'La descripción del diagnóstico es requerida' }}
+                rules={{ 
+                  required: 'La descripción del diagnóstico es requerida',
+                  minLength: {
+                    value: 10,
+                    message: 'La descripción debe tener al menos 10 caracteres'
+                  },
+                  maxLength: {
+                    value: 500,
+                    message: 'La descripción no puede exceder 500 caracteres'
+                  }
+                }}
                 render={({ field }) => (
                   <TextField
                     {...field}

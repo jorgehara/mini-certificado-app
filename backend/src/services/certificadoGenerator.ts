@@ -4,13 +4,13 @@ import { logInfo, logError } from '../utils/logger.js';
 
 // Configuración por defecto del certificado
 const defaultConfig: CertificadoConfig = {
-  width: 595.28,  // A4 width
-  height: 841.89, // A4 height
+  width: 283.46,   // 10 cm en puntos (10 cm * 28.346 pts/cm)
+  height: 595.28,  // 21 cm en puntos (21 cm * 28.346 pts/cm)
   margins: {
-    top: 60,
-    bottom: 60,
-    left: 50,
-    right: 50
+    top: 20,       // Márgenes más pequeños para el formato reducido
+    bottom: 20,
+    left: 20,
+    right: 20
   },
   colors: {
     primary: '#1976d2',
@@ -48,7 +48,7 @@ export class CertificadoGenerator {
         });
 
         const doc = new PDFDocument({
-          size: 'A4',
+          size: [this.config.width, this.config.height], // Tamaño personalizado 10cm x 21cm
           margins: this.config.margins
         });
 
@@ -90,11 +90,11 @@ export class CertificadoGenerator {
     const { width, height } = this.config;
     const centerX = width / 2;
     
-    // Encabezado
-    this.drawHeader(doc, centerX);
+    // Agregar imagen de fondo del recetario médico
+    this.drawBackgroundImage(doc, width, height);
     
-    // Título del certificado
-    this.drawTitle(doc, centerX);
+    // Encabezado con información del médico
+    this.drawHeader(doc, centerX);
     
     // Información del paciente
     this.drawPatientInfo(doc, data);
@@ -109,72 +109,181 @@ export class CertificadoGenerator {
     this.drawWatermark(doc, width, height);
   }
 
-  private drawHeader(doc: PDFKit.PDFDocument, centerX: number): void {
-    doc.fontSize(16)
-       .font(this.config.fonts.title)
-       .fillColor(this.config.colors.primary)
-       .text('CERTIFICADO MÉDICO', centerX - 80, 80, { align: 'center', width: 160 });
+  private drawBackgroundImage(doc: PDFKit.PDFDocument, width: number, height: number): void {
+    // Dibujar el fondo del recetario médico similar a la imagen
     
-    doc.fontSize(12)
-       .font(this.config.fonts.body)
-       .fillColor(this.config.colors.text)
-       .text('Centro Médico Integral', centerX - 100, 110, { align: 'center', width: 200 });
+    // Fondo blanco
+    doc.rect(0, 0, width, height)
+       .fillColor('#ffffff')
+       .fill();
+    
+    // BORDES DEL CERTIFICADO
+    // Borde izquierdo grueso (como en el recetario)
+    doc.rect(0, 0, 2, height)
+       .fillColor('#000000')
+       .fill();
+    
+    // Borde derecho
+    doc.rect(width - 1, 0, 1, height)
+       .fillColor('#000000')
+       .fill();
+    
+    // Borde superior
+    doc.rect(0, 0, width, 1)
+       .fillColor('#000000')
+       .fill();
+    
+    // Borde inferior
+    doc.rect(0, height - 1, width, 1)
+       .fillColor('#000000')
+       .fill();
+    
+    // Línea horizontal superior (después del header)
+    doc.moveTo(0, 70)
+       .lineTo(width, 70)
+       .strokeColor('#000000')
+       .lineWidth(0.5)
+       .stroke();
+       
+    // Línea horizontal inferior (antes del footer)
+    doc.moveTo(0, 480)
+       .lineTo(width, 480)
+       .strokeColor('#000000')
+       .lineWidth(0.5)
+       .stroke();
   }
 
-  private drawTitle(doc: PDFKit.PDFDocument, centerX: number): void {
-    doc.fontSize(14)
+  private drawHeader(doc: PDFKit.PDFDocument, _centerX: number): void {
+    // Header con información del médico (ajustado para formato pequeño)
+    doc.fontSize(10) // Tamaño de fuente más pequeño
        .font(this.config.fonts.title)
-       .fillColor(this.config.colors.secondary)
-       .text('CERTIFICADO DE REPOSO MÉDICO', centerX - 120, 150, { 
-         align: 'center', 
-         width: 240 
-       });
+       .fillColor('#000000')
+       .text('Dra. Kardasz Ivana Noelia', 10, 15, { align: 'center', width: 263 });
+    
+    doc.fontSize(8) // Tamaño de fuente más pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('ESPECIALISTA CLINICA GENERAL', 10, 30, { align: 'center', width: 263 });
+       
+    doc.fontSize(7) // Tamaño de fuente más pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('M.P. 7532', 10, 45, { align: 'center', width: 263 });
+       
+    // Número de receta en la esquina superior izquierda
+    doc.fontSize(9) // Tamaño de fuente más pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('Rp /', 10, 90);
   }
 
   private drawPatientInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    const startY = 200;
-    const lineHeight = 25;
+    const startY = 110; // Empezar más arriba
+    const lineHeight = 22; // Espaciado aumentado para evitar solapamiento
     
-    doc.fontSize(12)
+    doc.fontSize(9) // Tamaño de fuente más pequeño
        .font(this.config.fonts.body)
-       .fillColor(this.config.colors.text);
+       .fillColor('#000000'); // Color negro para mejor contraste
 
-    // Información del paciente
-    doc.text('Certifico que el/la Sr./Sra.:', 80, startY);
+    // Texto del certificado según el formato solicitado
+    doc.text('Dejo constancia que el/la', 25, startY);
     
-    doc.fontSize(14)
-       .font(this.config.fonts.signature)
-       .text(`${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`, 80, startY + lineHeight);
+    // ==================== LÍNEA DE PUNTOS PARA NOMBRE ====================
+    // INICIO: después de "Sr/a " (posición X calculada dinámicamente)
+    // FIN: hasta el margen derecho (aproximadamente X=260 para formato 10cm)
+    // CÁLCULO: (260 - posición_inicial) / 2.5 = cantidad de puntos (ajustado para texto más pequeño)
+    doc.text('Sr/a ', 25, startY + lineHeight, { continued: true });
+    const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
+    const nombreX = doc.x; // Posición donde termina "Sr/a "
+    doc.text(nombreCompleto);
     
-    doc.fontSize(12)
-       .font(this.config.fonts.body);
-       
-    doc.text(`DNI: ${data.dni}`, 80, startY + lineHeight * 2);
+    // Línea de puntos debajo del nombre
+    const nombreWidth = doc.widthOfString(nombreCompleto);
+    const espacioDisponibleNombre = 200; // Espacio ajustado para formato pequeño
+    const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 2.5));
+    console.log(`NOMBRE: Inicio X=${nombreX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
+    doc.text(puntosNombre, nombreX, startY + lineHeight + 2); // Separación de 2pts
+    // ================================================================
+
+    // ==================== LÍNEA DE PUNTOS PARA DNI ====================
+    // INICIO: después de "DNI: " (posición X calculada dinámicamente)  
+    // FIN: hasta X=150 aproximadamente (ajustado para formato pequeño)
+    // CÁLCULO: (150 - posición_inicial) / 2.5 = cantidad de puntos
+    doc.text('DNI: ', 25, startY + lineHeight * 2, { continued: true });
+    const dniX = doc.x; // Posición donde termina "DNI: "
+    doc.text(`${data.dni},`);
+    
+    // Línea de puntos debajo del DNI
+    const dniWidth = doc.widthOfString(data.dni + ',');
+    const espacioDisponibleDni = 100; // Espacio ajustado para formato pequeño
+    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 2.5));
+    console.log(`DNI: Inicio X=${dniX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
+    doc.text(puntosDni, dniX, startY + lineHeight * 2 + 2); // Separación de 2pts
+    // ================================================================
+
+    doc.text('consulta el día de la fecha', 25, startY + lineHeight * 3);
+    
+    // ==================== LÍNEA DE PUNTOS PARA DESCRIPCIÓN ====================
+    // INICIO: después de "por presentar " (posición X calculada dinámicamente)
+    // FIN: hasta X=250 aproximadamente (ajustado para formato pequeño)
+    // CÁLCULO: (250 - posición_inicial) / 2.5 = cantidad de puntos
+    doc.text('por presentar ', 25, startY + lineHeight * 4, { continued: true });
+    const descripcion = data.textoEntrada || 'síndrome gripal';
+    const descripcionX = doc.x; // Posición donde termina "por presentar "
+    doc.text(`${descripcion},`);
+    
+    // Línea de puntos debajo de la descripción
+    const descripcionWidth = doc.widthOfString(descripcion + ',');
+    const espacioDisponibleDescripcion = 180; // Espacio ajustado para formato pequeño
+    const puntosDescripcion = '.'.repeat(Math.floor((espacioDisponibleDescripcion - descripcionWidth) / 2.5));
+    console.log(`DESCRIPCIÓN: Inicio X=${descripcionX}, Ancho texto=${descripcionWidth}, Puntos generados=${puntosDescripcion.length}`);
+    doc.text(puntosDescripcion, descripcionX, startY + lineHeight * 4 + 2); // Separación de 2pts
+    // ================================================================
   }
 
   private drawMedicalInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    const startY = 300;
-    const lineHeight = 25;
+    const startY = 198; // Ajustado para el nuevo espaciado
+    const lineHeight = 22; // Espaciado aumentado para evitar solapamiento
     
-    doc.fontSize(12)
+    doc.fontSize(9) // Tamaño de fuente más pequeño
        .font(this.config.fonts.body)
-       .fillColor(this.config.colors.text);
+       .fillColor('#000000');
 
-    // Texto médico
-    doc.text('Debe guardar reposo por un período de:', 80, startY);
+    // ==================== LÍNEA DE PUNTOS PARA REPOSO ====================
+    // INICIO: después de "se sugiere reposo por " (posición X calculada dinámicamente)
+    // FIN: hasta X=200 aproximadamente (ajustado para formato pequeño)
+    // CÁLCULO: (200 - posición_inicial) / 2.5 = cantidad de puntos
+    doc.text('se sugiere reposo por ', 25, startY, { continued: true });
+    const horasTexto = `${data.horasReposo} horas`;
+    const reposoX = doc.x; // Posición donde termina "se sugiere reposo por "
+    doc.text(horasTexto);
     
-    doc.fontSize(14)
-       .font(this.config.fonts.title)
-       .fillColor(this.config.colors.secondary)
-       .text(`${data.horasReposo} HORAS`, 80, startY + lineHeight);
+    // Línea de puntos debajo del reposo
+    const reposoWidth = doc.widthOfString(horasTexto);
+    const espacioDisponibleReposo = 120; // Espacio ajustado para formato pequeño
+    const puntosReposo = '.'.repeat(Math.floor((espacioDisponibleReposo - reposoWidth) / 2.5));
+    console.log(`REPOSO: Inicio X=${reposoX}, Ancho texto=${reposoWidth}, Puntos generados=${puntosReposo.length}`);
+    doc.text(puntosReposo, reposoX, startY + 2); // Separación de 2pts
+    // ================================================================
+
+    // Espacio adicional antes del diagnóstico
+    doc.text('', 25, startY + lineHeight);
     
-    doc.fontSize(12)
-       .font(this.config.fonts.body)
-       .fillColor(this.config.colors.text);
-       
-    doc.text(`Código de diagnóstico: ${data.codigoDiagnostico}`, 80, startY + lineHeight * 2);
+    // ==================== LÍNEA DE PUNTOS PARA DIAGNÓSTICO ====================
+    // INICIO: después de "Diag: " (posición X calculada dinámicamente)
+    // FIN: hasta X=200 aproximadamente (ajustado para formato pequeño)
+    // CÁLCULO: (200 - posición_inicial) / 2.5 = cantidad de puntos
+    doc.text('Diag: ', 25, startY + lineHeight * 2, { continued: true });
+    const diagnosticoX = doc.x; // Posición donde termina "Diag: "
+    doc.text(data.codigoDiagnostico);
     
-    doc.text('Por prescripción médica y para presentar donde corresponda.', 80, startY + lineHeight * 3);
+    // Línea de puntos debajo del diagnóstico
+    const diagnosticoWidth = doc.widthOfString(data.codigoDiagnostico);
+    const espacioDisponibleDiagnostico = 150; // Espacio ajustado para formato pequeño
+    const puntosDiagnostico = '.'.repeat(Math.floor((espacioDisponibleDiagnostico - diagnosticoWidth) / 2.5));
+    console.log(`DIAGNÓSTICO: Inicio X=${diagnosticoX}, Ancho texto=${diagnosticoWidth}, Puntos generados=${puntosDiagnostico.length}`);
+    doc.text(puntosDiagnostico, diagnosticoX, startY + lineHeight * 2 + 2); // Separación de 2pts
+    // ================================================================
   }
 
   private drawFooter(doc: PDFKit.PDFDocument, data: CertificadoData, centerX: number): void {
@@ -185,23 +294,40 @@ export class CertificadoGenerator {
       day: 'numeric'
     });
     
-    doc.fontSize(11)
+    // Fecha del certificado en el área principal (antes de la firma)
+    doc.fontSize(8) // Tamaño de fuente pequeño
        .font(this.config.fonts.body)
-       .fillColor(this.config.colors.text)
-       .text(`Fecha: ${fechaStr}`, 80, 500);
+       .fillColor('#000000')
+       .text(`Buenos Aires, ${fechaStr}`, 25, 280); // Posición ajustada para el nuevo espaciado
 
-    // Línea para firma
-    doc.moveTo(centerX + 50, 550)
-       .lineTo(centerX + 200, 550)
+    // Línea para firma (más pequeña y más arriba)
+    doc.moveTo(centerX - 40, 320) // Ajustado para el nuevo espaciado
+       .lineTo(centerX + 40, 320)
+       .strokeColor('#000000')
+       .lineWidth(0.5)
        .stroke();
     
-    doc.fontSize(10)
-       .text('Firma y Sello Médico', centerX + 50, 560, { width: 150, align: 'center' });
+    doc.fontSize(7) // Tamaño de fuente pequeño
+       .fillColor('#000000')
+       .text('Firma y Sello Médico', centerX - 40, 325, { width: 80, align: 'center' });
+
+    // Información de contacto en el pie (en la parte inferior del documento)
+    const footerY = 500; // Posición ajustada para estar cerca del final del documento
     
-    // Información adicional
-    doc.fontSize(8)
-       .fillColor(this.config.colors.accent)
-       .text('Mat. Médica: 12345 - CMP', centerX + 50, 580, { width: 150, align: 'center' });
+    doc.fontSize(7) // Tamaño de fuente muy pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('Contacto 3794062059', 10, footerY, { align: 'center', width: 263 });
+       
+    doc.fontSize(6) // Tamaño de fuente muy pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('(Solo Whatsapp)', 10, footerY + 10, { align: 'center', width: 263 });
+       
+    doc.fontSize(7) // Tamaño de fuente muy pequeño
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('San Bernardo - Chaco', 10, footerY + 20, { align: 'center', width: 263 });
   }
 
   private drawWatermark(doc: PDFKit.PDFDocument, width: number, height: number): void {
