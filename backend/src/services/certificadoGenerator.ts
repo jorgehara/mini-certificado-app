@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import path from 'path';
 import { CertificadoData, CertificadoConfig } from '../types/index.js';
 import { logInfo, logError } from '../utils/logger.js';
 
@@ -244,6 +245,10 @@ export class CertificadoGenerator {
     const diagnosticoY = 240;
     const diagnosticoX = 25;
     
+    // FIRMA DIGITALIZADA - Posición superior derecha del certificado
+    const firmaY = 260;
+    const firmaX = 160;
+    
     doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000');
@@ -255,27 +260,15 @@ export class CertificadoGenerator {
     // Línea de diagnóstico con puntos
     doc.text('Diag: ', diagnosticoX, diagnosticoY, { continued: true });
     doc.text(`${data.codigoDiagnostico}`);
+    
+    // Firma digitalizada de la doctora
+    this.drawDigitalSignature(doc, firmaX, firmaY);
   }
 
-  private drawFooter(doc: PDFKit.PDFDocument, data: CertificadoData, centerX: number): void {
+  private drawFooter(doc: PDFKit.PDFDocument, data: CertificadoData, _centerX: number): void {
     // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
-    const firmaLineY = 440;       // (No se usa más - solo para referencia)
-    const firmaLineStartX = 100;  // (No se usa más - solo para referencia)
-    const firmaLineEndX = 180;    // (No se usa más - solo para referencia)
-    
-    const firmaTextY = 445;       // (No se usa más - solo para referencia)
-    const firmaTextX = 100;       // (No se usa más - solo para referencia)
-    
-    // SELLO MÉDICO - Alineado a la derecha
-    const selloY = 340;           // Altura del sello
-    const selloX = 160;           // Posición X del sello (hacia la derecha)
-    
     const fechaY = 380;
     const fechaX = 25;
-    
-    // LÍNEA DE PUNTOS FOOTER
-    const puntosFooterY = 420;    // Altura de la línea de puntos del footer
-    const puntosFooterX = 10;     // Posición X de la línea de puntos del footer
     
     const contactoY = 430;
     const contactoX = 10;
@@ -294,39 +287,6 @@ export class CertificadoGenerator {
     const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
     const year = fecha.getFullYear();
     const fechaStr = `${day}/${month}/${year}`;
-    
-    // Sello digitalizado de la doctora (sin línea de firma)
-    try {
-      // Aquí puedes agregar la imagen del sello
-      // doc.image('path/to/sello.png', selloX, selloY - 20, { 
-      //   width: 80, 
-      //   height: 40 
-      // });
-      
-      // Por ahora, texto del sello hasta que agregues la imagen
-      doc.fontSize(8)
-         .fillColor('#000000')
-         .text('Kardasz Ivana Noelia', selloX, selloY - 15, { width: 100, align: 'center' });
-      
-      doc.fontSize(7)
-         .fillColor('#000000')
-         .text('Especialista', selloX, selloY - 5, { width: 100, align: 'center' });
-      
-      doc.fontSize(6)
-         .fillColor('#000000')
-         .text('Medicina General y Familiar', selloX, selloY + 5, { width: 100, align: 'center' });
-      
-      doc.fontSize(7)
-         .fillColor('#000000')
-         .text('M.P. 7532', selloX, selloY + 15, { width: 100, align: 'center' });
-         
-    } catch (_error) {
-      console.log('No se pudo cargar el sello digitalizado');
-      // Fallback: texto simple
-      doc.fontSize(8)
-         .fillColor('#000000')
-         .text('Sello Médico', selloX, selloY, { width: 100, align: 'center' });
-    }
 
     // Fecha del certificado
     doc.fontSize(10)
@@ -334,9 +294,7 @@ export class CertificadoGenerator {
        .fillColor('#000000')
        .text(fechaStr, fechaX, fechaY);
 
-    // ==================== LÍNEA DE PUNTOS FOOTER ====================
-   
-    // Información de contacto debajo de la línea de puntos
+    // Información de contacto
     doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000')
@@ -352,11 +310,51 @@ export class CertificadoGenerator {
        .fillColor('#000000')
        .text('San Bernardo - Chaco', ubicacionX, ubicacionY, { align: 'center', width: 263 });
 
-
-        doc.fontSize(8)
+    doc.fontSize(8)
        .font(this.config.fonts.body)
        .fillColor('#000000')
        .text('Escaneado con CamScanner', leyendaCamScannerX, leyendaCamScannerY, { align: 'right', width: 263 });
+  }
+
+  private drawDigitalSignature(doc: PDFKit.PDFDocument, x: number, y: number): void {
+    try {
+      // Usar la imagen de firma digitalizada - ruta relativa desde la carpeta backend
+      const firmaPath = './assets/firmaDigital.jpeg';
+      
+      console.log('Intentando cargar firma desde:', firmaPath);
+      console.log('Directorio actual:', process.cwd());
+      
+      // Agregar la imagen de firma digitalizada
+      doc.image(firmaPath, x, y - 30, { 
+        width: 100, 
+        height: 60,
+        fit: [100, 60], // Mantiene la proporción dentro de estos límites
+        align: 'center'
+      });
+      
+      console.log('Firma digitalizada cargada exitosamente');
+         
+    } catch (error) {
+      console.log('No se pudo cargar la firma digitalizada:', error);
+      logError('Error al cargar firma digitalizada', error as Error);
+      
+      // Fallback: texto simple si no se puede cargar la imagen
+      doc.fontSize(8)
+         .fillColor('#000000')
+         .text('Kardasz Ivana Noelia', x, y - 15, { width: 100, align: 'center' });
+      
+      doc.fontSize(7)
+         .fillColor('#000000')
+         .text('Especialista', x, y - 5, { width: 100, align: 'center' });
+      
+      doc.fontSize(6)
+         .fillColor('#000000')
+         .text('Medicina General y Familiar', x, y + 5, { width: 100, align: 'center' });
+      
+      doc.fontSize(7)
+         .fillColor('#000000')
+         .text('M.P. 7532', x, y + 15, { width: 100, align: 'center' });
+    }
   }
 
   private drawWatermark(doc: PDFKit.PDFDocument, width: number, height: number): void {
