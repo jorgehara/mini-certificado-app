@@ -164,17 +164,17 @@ export class CertificadoGenerator {
     doc.fontSize(tamanoFuenteTitulo)
        .font(tipoFuenteTitulo)
        .fillColor(colorFuenteHeader)
-       .text('Dra. Kardasz Ivana Noelia', 10, 15, { align: 'center', width: 263 });
+       .text('Dra. Kardasz Ivana Noelia', 10, 25, { align: 'center', width: 263 });
     
     doc.fontSize(tamanoFuenteSubtitulo)
        .font(tipoFuenteTexto)
        .fillColor(colorFuenteHeader)
-       .text('ESPECIALISTA CLINICA GENERAL', 10, 30, { align: 'center', width: 263 });
+       .text('ESPECIALISTA CLINICA GENERAL', 10, 40, { align: 'center', width: 263 });
        
     doc.fontSize(tamanoFuenteSubtitulo)
        .font(tipoFuenteTexto)
        .fillColor(colorFuenteHeader)
-       .text('M.P. 7532', 10, 45, { align: 'center', width: 263 });
+       .text('M.P. 7532', 10, 50, { align: 'center', width: 263 });
        
     // Número de receta en la esquina superior izquierda
     doc.fontSize(tamanoFuenteReceta)
@@ -234,28 +234,36 @@ export class CertificadoGenerator {
     // ==================== LÍNEA DE PUNTOS PARA NOMBRE ====================
     doc.text('Sr/a ', nombreX, nombreY, { continued: true });
     const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
-    const nombreStartX = doc.x; // Posición donde termina "Sr/a "
+    const nombreStartX = +50; // Posición donde termina "Sr/a "
     doc.text(nombreCompleto);
+    
+    // Variables para línea de puntos del nombre - EDITA AQUÍ LAS COORDENADAS
+    const puntosNombreX = nombreStartX;              // Posición X de los puntos del nombre
+    const puntosNombreY = nombreY + 4;             // Posición Y de los puntos del nombre
+    const espacioDisponibleNombre = 200;             // Espacio disponible para puntos
     
     // Línea de puntos debajo del nombre
     const nombreWidth = doc.widthOfString(nombreCompleto);
-    const espacioDisponibleNombre = 200;
     const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 3));
     console.log(`NOMBRE: Inicio X=${nombreStartX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
-    doc.text(puntosNombre, nombreStartX, nombreY + 0.5);
+    doc.text(puntosNombre, puntosNombreX, puntosNombreY);
     // ================================================================
 
     // ==================== LÍNEA DE PUNTOS PARA DNI ====================
     doc.text('DNI: ', dniX, dniY, { continued: true });
-    const dniStartX = doc.x; // Posición donde termina "DNI: "
+    const dniStartX = + 50; // Posición donde termina "DNI: "
     doc.text(`${data.dni},`);
+    
+    // Variables para línea de puntos del DNI - EDITA AQUÍ LAS COORDENADAS
+    const puntosDniX = dniStartX;                    // Posición X de los puntos del DNI
+    const puntosDniY = dniY + 4;                     // Posición Y de los puntos del DNI
+    const espacioDisponibleDni = 100;                // Espacio disponible para puntos
     
     // Línea de puntos debajo del DNI
     const dniWidth = doc.widthOfString(data.dni + ',');
-    const espacioDisponibleDni = 100;
-    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 3));
+    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 2));
     console.log(`DNI: Inicio X=${dniStartX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
-    doc.text(puntosDni, dniStartX, dniY + 2);
+    doc.text(puntosDni, puntosDniX, puntosDniY);
     // ================================================================
 
     doc.text('consulta el día de la fecha', consultaX, consultaY);
@@ -308,7 +316,7 @@ export class CertificadoGenerator {
     const fechaStr = `${day}/${month}/${year}`;
 
     // Fecha del certificado
-    doc.fontSize(10)
+    doc.fontSize(12)
        .font(this.config.fonts.body)
        .fillColor('#000000')
        .text(fechaStr, fechaX, fechaY);
