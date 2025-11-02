@@ -47,8 +47,11 @@ export class CertificadoController {
       // Generar PDF
       const pdfBuffer = await this.certificadoGenerator.generateCertificado(certificadoData);
 
-      // Configurar headers para descarga
-      const filename = `certificado_${certificadoData.dni}_${new Date().toISOString().split('T')[0]}.pdf`;
+      // Generar nombre de archivo con nombre y apellido del paciente
+      const nombreLimpio = certificadoData.nombre.replace(/[^a-zA-Z0-9]/g, '');
+      const apellidoLimpio = certificadoData.apellido.replace(/[^a-zA-Z0-9]/g, '');
+      const fechaStr = new Date().toISOString().split('T')[0];
+      const filename = `certificado_${nombreLimpio}_${apellidoLimpio}_${fechaStr}.pdf`;
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
@@ -94,11 +97,17 @@ export class CertificadoController {
 
       const certificadoData = validation.data as CertificadoData;
       
+      // Generar nombre de archivo con nombre y apellido del paciente
+      const nombreLimpio = certificadoData.nombre.replace(/[^a-zA-Z0-9]/g, '');
+      const apellidoLimpio = certificadoData.apellido.replace(/[^a-zA-Z0-9]/g, '');
+      const fechaStr = new Date().toISOString().split('T')[0];
+      const filename = `certificado_${nombreLimpio}_${apellidoLimpio}_${fechaStr}.pdf`;
+      
       // Agregar información adicional para la vista previa
       const preview = {
         ...certificadoData,
         fechaEmision: certificadoData.fechaEmision || new Date(),
-        filename: `certificado_${certificadoData.dni}_${new Date().toISOString().split('T')[0]}.pdf`,
+        filename,
         estimatedSize: '~150KB'
       };
 

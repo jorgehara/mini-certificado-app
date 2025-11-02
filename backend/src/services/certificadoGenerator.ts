@@ -306,7 +306,7 @@ export class CertificadoGenerator {
     const ubicacionY = 460;
     const ubicacionX = 10;
 
-    const leyendaCamScannerY = 490;
+    const leyendaCamScannerY = 430;
     const leyendaCamScannerX = 10;
     
     const fecha = data.fechaEmision || new Date();
@@ -322,20 +322,20 @@ export class CertificadoGenerator {
        .text(fechaStr, fechaX, fechaY);
 
     // Información de contacto
-    doc.fontSize(10)
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
-       .text('Contacto 3794062059', contactoX, contactoY, { align: 'center', width: 263 });
+    // doc.fontSize(10)
+    //    .font(this.config.fonts.body)
+    //    .fillColor('#000000')
+    //    .text('Contacto 3794062059', contactoX, contactoY, { align: 'center', width: 263 });
        
-    doc.fontSize(10)
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
-       .text('(Solo Whatsapp)', whatsappX, whatsappY, { align: 'center', width: 263 });
+    // doc.fontSize(10)
+    //    .font(this.config.fonts.body)
+    //    .fillColor('#000000')
+    //    .text('(Solo Whatsapp)', whatsappX, whatsappY, { align: 'center', width: 263 });
        
-    doc.fontSize(10)
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
-       .text('San Bernardo - Chaco', ubicacionX, ubicacionY, { align: 'center', width: 263 });
+    // doc.fontSize(10)
+    //    .font(this.config.fonts.body)
+    //    .fillColor('#000000')
+    //    .text('San Bernardo - Chaco', ubicacionX, ubicacionY, { align: 'center', width: 263 });
 
     doc.fontSize(8)
        .font(this.config.fonts.body)
