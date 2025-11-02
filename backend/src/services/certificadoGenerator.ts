@@ -97,11 +97,8 @@ export class CertificadoGenerator {
     // Encabezado con información del médico
     this.drawHeader(doc, centerX);
     
-    // Información del paciente
+    // Información del paciente y médica (todo en una función)
     this.drawPatientInfo(doc, data);
-    
-    // Diagnóstico y reposo
-    this.drawMedicalInfo(doc, data);
     
     // Fecha y firma
     this.drawFooter(doc, data, centerX);
@@ -155,49 +152,81 @@ export class CertificadoGenerator {
   }
 
   private drawHeader(doc: PDFKit.PDFDocument, _centerX: number): void {
+    // Variables de fuente para el header - EDITA AQUÍ LA TIPOGRAFÍA DEL HEADER
+    const tamanoFuenteTitulo = 12;               // Tamaño de fuente para el nombre del médico
+    const tamanoFuenteSubtitulo = 10;            // Tamaño de fuente para especialidad y MP
+    const tamanoFuenteReceta = 10;               // Tamaño de fuente para "Rp /"
+    const tipoFuenteTitulo = this.config.fonts.title;     // Fuente en negrita para título
+    const tipoFuenteTexto = this.config.fonts.body;       // Fuente normal para subtítulos
+    const colorFuenteHeader = '#000000';                  // Color de fuente
+    
     // Header con información del médico (ajustado para formato pequeño)
-    doc.fontSize(12) // Tamaño de fuente más pequeño
-       .font(this.config.fonts.title)
-       .fillColor('#000000')
+    doc.fontSize(tamanoFuenteTitulo)
+       .font(tipoFuenteTitulo)
+       .fillColor(colorFuenteHeader)
        .text('Dra. Kardasz Ivana Noelia', 10, 15, { align: 'center', width: 263 });
     
-    doc.fontSize(10) // Tamaño de fuente más pequeño
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
+    doc.fontSize(tamanoFuenteSubtitulo)
+       .font(tipoFuenteTexto)
+       .fillColor(colorFuenteHeader)
        .text('ESPECIALISTA CLINICA GENERAL', 10, 30, { align: 'center', width: 263 });
        
-    doc.fontSize(10) // Tamaño de fuente más pequeño
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
+    doc.fontSize(tamanoFuenteSubtitulo)
+       .font(tipoFuenteTexto)
+       .fillColor(colorFuenteHeader)
        .text('M.P. 7532', 10, 45, { align: 'center', width: 263 });
        
     // Número de receta en la esquina superior izquierda
-    doc.fontSize(10) // Tamaño de fuente más pequeño
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
+    doc.fontSize(tamanoFuenteReceta)
+       .font(tipoFuenteTexto)
+       .fillColor(colorFuenteHeader)
        .text('Rp /', 10, 90);
   }
 
   private drawPatientInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
+    // Variables de fuente y espaciado - EDITA AQUÍ LA TIPOGRAFÍA
+    const tamanoFuentePaciente = 12;     // Tamaño de fuente para información del paciente
+    const interlineadoPaciente = 30;     // Espaciado entre líneas (diferencia entre Y)
+    const tipoFuentePaciente = this.config.fonts.body;  // Tipo de fuente
+    const colorFuentePaciente = 'rgba(32, 30, 30, 0.68)';              // Color de fuente
+    
+    // Variables de fuente para información médica - EDITA AQUÍ LA TIPOGRAFÍA MÉDICA
+    const tamanoFuenteMedica = 12;              // Tamaño de fuente para reposo y diagnóstico
+    const tipoFuenteMedica = this.config.fonts.body;     // Tipo de fuente
+    const colorFuenteMedica = 'rgba(32, 30, 30, 0.68)';                 // Color de fuente
+    const interlineadoMedico = 30;              // Espaciado entre líneas médicas
+    
+    // Variables de posición para cada línea - USANDO EL INTERLINEADO
     const constanciaY = 120;
     const constanciaX = 25;
     
-    const nombreY = 140;
+    const nombreY = constanciaY + interlineadoPaciente;      // 150
     const nombreX = 25;
     
-    const dniY = 160;
+    const dniY = nombreY + interlineadoPaciente;             // 180
     const dniX = 25;
     
-    const consultaY = 180;
+    const consultaY = dniY + interlineadoPaciente;           // 210
     const consultaX = 25;
     
-    const presentarY = 200;
+    const presentarY = consultaY + interlineadoPaciente;     // 240
     const presentarX = 25;
     
-    doc.fontSize(10)
-       .font(this.config.fonts.body)
-       .fillColor('#000000');
+    // Variables de posición para información médica - USANDO EL INTERLINEADO
+    const reposoY = presentarY + interlineadoPaciente;       // 270
+    const reposoX = 25;
+    
+    const diagnosticoY = reposoY + interlineadoMedico;       // 290
+    const diagnosticoX = 25;
+    
+    // FIRMA DIGITALIZADA - Posición alineada con las demás líneas
+    const firmaY = diagnosticoY + (interlineadoMedico * 2);  // 330
+    const firmaX = 160;
+    
+    // ==================== INFORMACIÓN DEL PACIENTE ====================
+    doc.fontSize(tamanoFuentePaciente)
+       .font(tipoFuentePaciente)
+       .fillColor(colorFuentePaciente);
 
     // Texto del certificado según el formato solicitado
     doc.text('Dejo constancia que el/la', constanciaX, constanciaY);
@@ -226,7 +255,7 @@ export class CertificadoGenerator {
     const espacioDisponibleDni = 100;
     const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 3));
     console.log(`DNI: Inicio X=${dniStartX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
-    doc.text(puntosDni, dniStartX, dniY + 0.5);
+    doc.text(puntosDni, dniStartX, dniY + 2);
     // ================================================================
 
     doc.text('consulta el día de la fecha', consultaX, consultaY);
@@ -235,29 +264,19 @@ export class CertificadoGenerator {
     doc.text('por presentar ', presentarX, presentarY, { continued: true });
     const descripcion = data.textoEntrada || 'síndrome gripal';
     doc.text(`${descripcion},`);
-  }
-
-  private drawMedicalInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
-    const reposoY = 220;
-    const reposoX = 25;
     
-    const diagnosticoY = 240;
-    const diagnosticoX = 25;
-    
-    // FIRMA DIGITALIZADA - Posición superior derecha del certificado
-    const firmaY = 260;
-    const firmaX = 160;
-    
-    doc.fontSize(10)
-       .font(this.config.fonts.body)
-       .fillColor('#000000');
-
-    // Línea de reposo con puntos
+    // ==================== INFORMACIÓN MÉDICA ====================
+    // Línea de reposo - Aplicar fuente antes de cada línea
+    doc.fontSize(tamanoFuenteMedica)
+       .font(tipoFuenteMedica)
+       .fillColor(colorFuenteMedica);
     doc.text('se sugiere reposo por ', reposoX, reposoY, { continued: true });
     doc.text(`${data.horasReposo}hs.`);
     
-    // Línea de diagnóstico con puntos
+    // Línea de diagnóstico - Aplicar fuente antes de cada línea
+    doc.fontSize(tamanoFuenteMedica)
+       .font(tipoFuenteMedica)
+       .fillColor(colorFuenteMedica);
     doc.text('Diag: ', diagnosticoX, diagnosticoY, { continued: true });
     doc.text(`${data.codigoDiagnostico}`);
     
@@ -321,14 +340,17 @@ export class CertificadoGenerator {
       // Usar la imagen de firma digitalizada - ruta relativa desde la carpeta backend
       const firmaPath = './assets/firmaDigital.jpeg';
       
-      console.log('Intentando cargar firma desde:', firmaPath);
-      console.log('Directorio actual:', process.cwd());
-      
-      // Agregar la imagen de firma digitalizada
-      doc.image(firmaPath, x, y - 30, { 
-        width: 100, 
-        height: 60,
-        fit: [100, 60], // Mantiene la proporción dentro de estos límites
+      // Variables de posición para la imagen de firma - EDITA AQUÍ LAS COORDENADAS
+      const imagenFirmaX = + 160;      // Posición X de la imagen
+      const imagenFirmaY = 300;      // Posición Y de la imagen
+      const imagenAncho = 120;      // Ancho de la imagen
+      const imagenAlto = 80;       // Alto de la imagen
+    
+      // Agregar la imagen de firma digitalizada usando las coordenadas variables
+      doc.image(firmaPath, imagenFirmaX, imagenFirmaY, { 
+        width: imagenAncho, 
+        height: imagenAlto,
+        fit: [imagenAncho, imagenAlto], // Mantiene la proporción dentro de estos límites
         align: 'center'
       });
       
@@ -341,23 +363,21 @@ export class CertificadoGenerator {
       // Fallback: texto simple si no se puede cargar la imagen
       doc.fontSize(8)
          .fillColor('#000000')
-         .text('Kardasz Ivana Noelia', x, y - 15, { width: 100, align: 'center' });
+         .text('Kardasz Ivana Noelia', x, y, { width: 100, align: 'center' });
       
       doc.fontSize(7)
          .fillColor('#000000')
-         .text('Especialista', x, y - 5, { width: 100, align: 'center' });
+         .text('Especialista', x, y + 10, { width: 100, align: 'center' });
       
       doc.fontSize(6)
          .fillColor('#000000')
-         .text('Medicina General y Familiar', x, y + 5, { width: 100, align: 'center' });
+         .text('Medicina General y Familiar', x, y + 20, { width: 100, align: 'center' });
       
       doc.fontSize(7)
          .fillColor('#000000')
-         .text('M.P. 7532', x, y + 15, { width: 100, align: 'center' });
+         .text('M.P. 7532', x, y + 30, { width: 100, align: 'center' });
     }
-  }
-
-  private drawWatermark(doc: PDFKit.PDFDocument, width: number, height: number): void {
+  }  private drawWatermark(doc: PDFKit.PDFDocument, width: number, height: number): void {
     // Guardar estado gráfico
     doc.save();
     
