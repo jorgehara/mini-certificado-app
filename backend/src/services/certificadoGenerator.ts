@@ -5,10 +5,10 @@ import { logInfo, logError } from '../utils/logger.js';
 // Configuración por defecto del certificado
 const defaultConfig: CertificadoConfig = {
   width: 283.46,   // 10 cm en puntos (10 cm * 28.346 pts/cm)
-  height: 595.28,  // 21 cm en puntos (21 cm * 28.346 pts/cm)
+  height: 535.28,  // 21 cm en puntos (21 cm * 28.346 pts/cm)
   margins: {
-    top: 20,       // Márgenes más pequeños para el formato reducido
-    bottom: 20,
+    top: 25,       // Márgenes más pequeños para el formato reducido
+    bottom: 25,
     left: 20,
     right: 20
   },
@@ -146,8 +146,8 @@ export class CertificadoGenerator {
        .stroke();
        
     // Línea horizontal inferior (antes del footer)
-    doc.moveTo(0, 480)
-       .lineTo(width, 480)
+    doc.moveTo(0, 410)
+       .lineTo(width, 410)
        .strokeColor('#000000')
        .lineWidth(0.5)
        .stroke();
@@ -155,179 +155,208 @@ export class CertificadoGenerator {
 
   private drawHeader(doc: PDFKit.PDFDocument, _centerX: number): void {
     // Header con información del médico (ajustado para formato pequeño)
-    doc.fontSize(10) // Tamaño de fuente más pequeño
+    doc.fontSize(12) // Tamaño de fuente más pequeño
        .font(this.config.fonts.title)
        .fillColor('#000000')
        .text('Dra. Kardasz Ivana Noelia', 10, 15, { align: 'center', width: 263 });
     
-    doc.fontSize(8) // Tamaño de fuente más pequeño
+    doc.fontSize(10) // Tamaño de fuente más pequeño
        .font(this.config.fonts.body)
        .fillColor('#000000')
        .text('ESPECIALISTA CLINICA GENERAL', 10, 30, { align: 'center', width: 263 });
        
-    doc.fontSize(7) // Tamaño de fuente más pequeño
+    doc.fontSize(10) // Tamaño de fuente más pequeño
        .font(this.config.fonts.body)
        .fillColor('#000000')
        .text('M.P. 7532', 10, 45, { align: 'center', width: 263 });
        
     // Número de receta en la esquina superior izquierda
-    doc.fontSize(9) // Tamaño de fuente más pequeño
+    doc.fontSize(10) // Tamaño de fuente más pequeño
        .font(this.config.fonts.body)
        .fillColor('#000000')
        .text('Rp /', 10, 90);
   }
 
   private drawPatientInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    const startY = 110; // Empezar más arriba
-    const lineHeight = 22; // Espaciado aumentado para evitar solapamiento
+    // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
+    const constanciaY = 120;
+    const constanciaX = 25;
     
-    doc.fontSize(9) // Tamaño de fuente más pequeño
+    const nombreY = 140;
+    const nombreX = 25;
+    
+    const dniY = 160;
+    const dniX = 25;
+    
+    const consultaY = 180;
+    const consultaX = 25;
+    
+    const presentarY = 200;
+    const presentarX = 25;
+    
+    doc.fontSize(10)
        .font(this.config.fonts.body)
-       .fillColor('#000000'); // Color negro para mejor contraste
+       .fillColor('#000000');
 
     // Texto del certificado según el formato solicitado
-    doc.text('Dejo constancia que el/la', 25, startY);
+    doc.text('Dejo constancia que el/la', constanciaX, constanciaY);
     
     // ==================== LÍNEA DE PUNTOS PARA NOMBRE ====================
-    // INICIO: después de "Sr/a " (posición X calculada dinámicamente)
-    // FIN: hasta el margen derecho (aproximadamente X=260 para formato 10cm)
-    // CÁLCULO: (260 - posición_inicial) / 2.5 = cantidad de puntos (ajustado para texto más pequeño)
-    doc.text('Sr/a ', 25, startY + lineHeight, { continued: true });
+    doc.text('Sr/a ', nombreX, nombreY, { continued: true });
     const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
-    const nombreX = doc.x; // Posición donde termina "Sr/a "
+    const nombreStartX = doc.x; // Posición donde termina "Sr/a "
     doc.text(nombreCompleto);
     
     // Línea de puntos debajo del nombre
     const nombreWidth = doc.widthOfString(nombreCompleto);
-    const espacioDisponibleNombre = 200; // Espacio ajustado para formato pequeño
-    const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 2.5));
-    console.log(`NOMBRE: Inicio X=${nombreX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
-    doc.text(puntosNombre, nombreX, startY + lineHeight + 2); // Separación de 2pts
+    const espacioDisponibleNombre = 200;
+    const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 3));
+    console.log(`NOMBRE: Inicio X=${nombreStartX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
+    doc.text(puntosNombre, nombreStartX, nombreY + 0.5);
     // ================================================================
 
     // ==================== LÍNEA DE PUNTOS PARA DNI ====================
-    // INICIO: después de "DNI: " (posición X calculada dinámicamente)  
-    // FIN: hasta X=150 aproximadamente (ajustado para formato pequeño)
-    // CÁLCULO: (150 - posición_inicial) / 2.5 = cantidad de puntos
-    doc.text('DNI: ', 25, startY + lineHeight * 2, { continued: true });
-    const dniX = doc.x; // Posición donde termina "DNI: "
+    doc.text('DNI: ', dniX, dniY, { continued: true });
+    const dniStartX = doc.x; // Posición donde termina "DNI: "
     doc.text(`${data.dni},`);
     
     // Línea de puntos debajo del DNI
     const dniWidth = doc.widthOfString(data.dni + ',');
-    const espacioDisponibleDni = 100; // Espacio ajustado para formato pequeño
-    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 2.5));
-    console.log(`DNI: Inicio X=${dniX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
-    doc.text(puntosDni, dniX, startY + lineHeight * 2 + 2); // Separación de 2pts
+    const espacioDisponibleDni = 100;
+    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 3));
+    console.log(`DNI: Inicio X=${dniStartX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
+    doc.text(puntosDni, dniStartX, dniY + 0.5);
     // ================================================================
 
-    doc.text('consulta el día de la fecha', 25, startY + lineHeight * 3);
+    doc.text('consulta el día de la fecha', consultaX, consultaY);
     
-    // ==================== LÍNEA DE PUNTOS PARA DESCRIPCIÓN ====================
-    // INICIO: después de "por presentar " (posición X calculada dinámicamente)
-    // FIN: hasta X=250 aproximadamente (ajustado para formato pequeño)
-    // CÁLCULO: (250 - posición_inicial) / 2.5 = cantidad de puntos
-    doc.text('por presentar ', 25, startY + lineHeight * 4, { continued: true });
+    // Línea "por presentar" (sin puntos, como en el ejemplo real)
+    doc.text('por presentar ', presentarX, presentarY, { continued: true });
     const descripcion = data.textoEntrada || 'síndrome gripal';
-    const descripcionX = doc.x; // Posición donde termina "por presentar "
     doc.text(`${descripcion},`);
-    
-    // Línea de puntos debajo de la descripción
-    const descripcionWidth = doc.widthOfString(descripcion + ',');
-    const espacioDisponibleDescripcion = 180; // Espacio ajustado para formato pequeño
-    const puntosDescripcion = '.'.repeat(Math.floor((espacioDisponibleDescripcion - descripcionWidth) / 2.5));
-    console.log(`DESCRIPCIÓN: Inicio X=${descripcionX}, Ancho texto=${descripcionWidth}, Puntos generados=${puntosDescripcion.length}`);
-    doc.text(puntosDescripcion, descripcionX, startY + lineHeight * 4 + 2); // Separación de 2pts
-    // ================================================================
   }
 
   private drawMedicalInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    const startY = 198; // Ajustado para el nuevo espaciado
-    const lineHeight = 22; // Espaciado aumentado para evitar solapamiento
+    // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
+    const reposoY = 220;
+    const reposoX = 25;
     
-    doc.fontSize(9) // Tamaño de fuente más pequeño
+    const diagnosticoY = 240;
+    const diagnosticoX = 25;
+    
+    doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000');
 
-    // ==================== LÍNEA DE PUNTOS PARA REPOSO ====================
-    // INICIO: después de "se sugiere reposo por " (posición X calculada dinámicamente)
-    // FIN: hasta X=200 aproximadamente (ajustado para formato pequeño)
-    // CÁLCULO: (200 - posición_inicial) / 2.5 = cantidad de puntos
-    doc.text('se sugiere reposo por ', 25, startY, { continued: true });
-    const horasTexto = `${data.horasReposo} horas`;
-    const reposoX = doc.x; // Posición donde termina "se sugiere reposo por "
-    doc.text(horasTexto);
+    // Línea de reposo con puntos
+    doc.text('se sugiere reposo por ', reposoX, reposoY, { continued: true });
+    doc.text(`${data.horasReposo}hs.`);
     
-    // Línea de puntos debajo del reposo
-    const reposoWidth = doc.widthOfString(horasTexto);
-    const espacioDisponibleReposo = 120; // Espacio ajustado para formato pequeño
-    const puntosReposo = '.'.repeat(Math.floor((espacioDisponibleReposo - reposoWidth) / 2.5));
-    console.log(`REPOSO: Inicio X=${reposoX}, Ancho texto=${reposoWidth}, Puntos generados=${puntosReposo.length}`);
-    doc.text(puntosReposo, reposoX, startY + 2); // Separación de 2pts
-    // ================================================================
-
-    // Espacio adicional antes del diagnóstico
-    doc.text('', 25, startY + lineHeight);
-    
-    // ==================== LÍNEA DE PUNTOS PARA DIAGNÓSTICO ====================
-    // INICIO: después de "Diag: " (posición X calculada dinámicamente)
-    // FIN: hasta X=200 aproximadamente (ajustado para formato pequeño)
-    // CÁLCULO: (200 - posición_inicial) / 2.5 = cantidad de puntos
-    doc.text('Diag: ', 25, startY + lineHeight * 2, { continued: true });
-    const diagnosticoX = doc.x; // Posición donde termina "Diag: "
-    doc.text(data.codigoDiagnostico);
-    
-    // Línea de puntos debajo del diagnóstico
-    const diagnosticoWidth = doc.widthOfString(data.codigoDiagnostico);
-    const espacioDisponibleDiagnostico = 150; // Espacio ajustado para formato pequeño
-    const puntosDiagnostico = '.'.repeat(Math.floor((espacioDisponibleDiagnostico - diagnosticoWidth) / 2.5));
-    console.log(`DIAGNÓSTICO: Inicio X=${diagnosticoX}, Ancho texto=${diagnosticoWidth}, Puntos generados=${puntosDiagnostico.length}`);
-    doc.text(puntosDiagnostico, diagnosticoX, startY + lineHeight * 2 + 2); // Separación de 2pts
-    // ================================================================
+    // Línea de diagnóstico con puntos
+    doc.text('Diag: ', diagnosticoX, diagnosticoY, { continued: true });
+    doc.text(`${data.codigoDiagnostico}`);
   }
 
   private drawFooter(doc: PDFKit.PDFDocument, data: CertificadoData, centerX: number): void {
+    // Variables de posición para cada línea - EDITA AQUÍ LAS POSICIONES
+    const firmaLineY = 440;       // (No se usa más - solo para referencia)
+    const firmaLineStartX = 100;  // (No se usa más - solo para referencia)
+    const firmaLineEndX = 180;    // (No se usa más - solo para referencia)
+    
+    const firmaTextY = 445;       // (No se usa más - solo para referencia)
+    const firmaTextX = 100;       // (No se usa más - solo para referencia)
+    
+    // SELLO MÉDICO - Alineado a la derecha
+    const selloY = 340;           // Altura del sello
+    const selloX = 160;           // Posición X del sello (hacia la derecha)
+    
+    const fechaY = 380;
+    const fechaX = 25;
+    
+    // LÍNEA DE PUNTOS FOOTER
+    const puntosFooterY = 420;    // Altura de la línea de puntos del footer
+    const puntosFooterX = 10;     // Posición X de la línea de puntos del footer
+    
+    const contactoY = 430;
+    const contactoX = 10;
+    
+    const whatsappY = 445;
+    const whatsappX = 10;
+    
+    const ubicacionY = 460;
+    const ubicacionX = 10;
+
+    const leyendaCamScannerY = 490;
+    const leyendaCamScannerX = 10;
+    
     const fecha = data.fechaEmision || new Date();
-    const fechaStr = fecha.toLocaleDateString('es-AR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    const day = fecha.getDate().toString().padStart(2, '0');
+    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+    const year = fecha.getFullYear();
+    const fechaStr = `${day}/${month}/${year}`;
     
-    // Fecha del certificado en el área principal (antes de la firma)
-    doc.fontSize(8) // Tamaño de fuente pequeño
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
-       .text(`Buenos Aires, ${fechaStr}`, 25, 280); // Posición ajustada para el nuevo espaciado
+    // Sello digitalizado de la doctora (sin línea de firma)
+    try {
+      // Aquí puedes agregar la imagen del sello
+      // doc.image('path/to/sello.png', selloX, selloY - 20, { 
+      //   width: 80, 
+      //   height: 40 
+      // });
+      
+      // Por ahora, texto del sello hasta que agregues la imagen
+      doc.fontSize(8)
+         .fillColor('#000000')
+         .text('Kardasz Ivana Noelia', selloX, selloY - 15, { width: 100, align: 'center' });
+      
+      doc.fontSize(7)
+         .fillColor('#000000')
+         .text('Especialista', selloX, selloY - 5, { width: 100, align: 'center' });
+      
+      doc.fontSize(6)
+         .fillColor('#000000')
+         .text('Medicina General y Familiar', selloX, selloY + 5, { width: 100, align: 'center' });
+      
+      doc.fontSize(7)
+         .fillColor('#000000')
+         .text('M.P. 7532', selloX, selloY + 15, { width: 100, align: 'center' });
+         
+    } catch (_error) {
+      console.log('No se pudo cargar el sello digitalizado');
+      // Fallback: texto simple
+      doc.fontSize(8)
+         .fillColor('#000000')
+         .text('Sello Médico', selloX, selloY, { width: 100, align: 'center' });
+    }
 
-    // Línea para firma (más pequeña y más arriba)
-    doc.moveTo(centerX - 40, 320) // Ajustado para el nuevo espaciado
-       .lineTo(centerX + 40, 320)
-       .strokeColor('#000000')
-       .lineWidth(0.5)
-       .stroke();
-    
-    doc.fontSize(7) // Tamaño de fuente pequeño
+    // Fecha del certificado
+    doc.fontSize(10)
+       .font(this.config.fonts.body)
        .fillColor('#000000')
-       .text('Firma y Sello Médico', centerX - 40, 325, { width: 80, align: 'center' });
+       .text(fechaStr, fechaX, fechaY);
 
-    // Información de contacto en el pie (en la parte inferior del documento)
-    const footerY = 500; // Posición ajustada para estar cerca del final del documento
-    
-    doc.fontSize(7) // Tamaño de fuente muy pequeño
+    // ==================== LÍNEA DE PUNTOS FOOTER ====================
+   
+    // Información de contacto debajo de la línea de puntos
+    doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000')
-       .text('Contacto 3794062059', 10, footerY, { align: 'center', width: 263 });
+       .text('Contacto 3794062059', contactoX, contactoY, { align: 'center', width: 263 });
        
-    doc.fontSize(6) // Tamaño de fuente muy pequeño
+    doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000')
-       .text('(Solo Whatsapp)', 10, footerY + 10, { align: 'center', width: 263 });
+       .text('(Solo Whatsapp)', whatsappX, whatsappY, { align: 'center', width: 263 });
        
-    doc.fontSize(7) // Tamaño de fuente muy pequeño
+    doc.fontSize(10)
        .font(this.config.fonts.body)
        .fillColor('#000000')
-       .text('San Bernardo - Chaco', 10, footerY + 20, { align: 'center', width: 263 });
+       .text('San Bernardo - Chaco', ubicacionX, ubicacionY, { align: 'center', width: 263 });
+
+
+        doc.fontSize(8)
+       .font(this.config.fonts.body)
+       .fillColor('#000000')
+       .text('Escaneado con CamScanner', leyendaCamScannerX, leyendaCamScannerY, { align: 'right', width: 263 });
   }
 
   private drawWatermark(doc: PDFKit.PDFDocument, width: number, height: number): void {
@@ -335,17 +364,17 @@ export class CertificadoGenerator {
     doc.save();
     
     // Configurar transparencia y rotación para marca de agua
-    doc.opacity(0.1)
-       .fontSize(48)
-       .font(this.config.fonts.body)
-       .fillColor('#999999');
+    // doc.opacity(0.1)
+    //    .fontSize(48)
+    //    .font(this.config.fonts.body)
+    //    .fillColor('#999999');
     
-    // Rotar y posicionar marca de agua
-    doc.rotate(-45, { origin: [width / 2, height / 2] })
-       .text('Escaneado con CamScanner', width / 2 - 200, height / 2, {
-         align: 'center',
-         width: 400
-       });
+    // // Rotar y posicionar marca de agua
+    // doc.rotate(-45, { origin: [width / 2, height / 2] })
+    //    .text('Escaneado con CamScanner', width / 2 - 200, height / 2, {
+    //      align: 'center',
+    //      width: 400
+    //    });
     
     // Restaurar estado gráfico
     doc.restore();
