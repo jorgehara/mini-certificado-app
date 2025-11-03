@@ -164,6 +164,94 @@ export class CertificadoController {
     }
   }
 
+  // Endpoint específico para n8n/Telegram - parsea texto simple
+  async generateFromTelegram(req: Request, res: Response): Promise<void> {
+    try {
+      logInfo('Iniciando generación de certificado desde Telegram', { 
+        ip: req.ip,
+        body: req.body
+      });
+
+      const { mensaje } = req.body;
+      
+      if (!mensaje || typeof mensaje !== 'string') {
+        throw new ValidationError('Se requiere el campo "mensaje" con el texto a procesar');
+      }
+
+      // Parsear el mensaje: "32664697	JARA JORGE	24HS. Sindrome gripal B349"
+      const partes = mensaje.trim().split('\t').filter(p => p.trim() !== '');
+      
+      if (partes.length < 3) {
+        throw new ValidationError('Formato de mensaje incorrecto. Esperado: DNI [TAB] APELLIDO NOMBRE [TAB] TIEMPO. Diagnóstico CODIGO');
+      }
+
+      const dni = partes[0]?.trim() || '';
+      const nombreCompleto = partes[1]?.trim() || '';
+      const descripcionCompleta = partes[2]?.trim() || '';
+
+      if (!dni || !nombreCompleto || !descripcionCompleta) {
+        throw new ValidationError('Datos incompletos en el mensaje');
+      }
+
+      // Separar nombre y apellido
+      const partesNombre = nombreCompleto.split(' ');
+      const apellido = partesNombre[0] || '';
+      const nombre = partesNombre.slice(1).join(' ') || '';
+
+      // Extraer horas de reposo y diagnóstico
+      const matchHoras = descripcionCompleta.match(/(\d+)\s*HS?/i);
+      const horasReposo = matchHoras?.[1] ? parseInt(matchHoras[1]) : 24;
+
+      // Extraer código de diagnóstico (ejemplo: B349)
+      const matchCodigo = descripcionCompleta.match(/([A-Z]\d+)/);
+      const codigoDiagnostico = matchCodigo?.[1] || 'Z76.1';
+
+      // Crear objeto de datos del certificado
+      const certificadoData: CertificadoData = {
+        dni,
+        nombre,
+        apellido,
+        horasReposo,
+        codigoDiagnostico,
+        textoEntrada: descripcionCompleta,
+        fechaEmision: new Date()
+      };
+
+      logInfo('Datos parseados desde Telegram', certificadoData);
+
+      // Generar PDF
+      const pdfBuffer = await this.certificadoGenerator.generateCertificado(certificadoData);
+
+      // Generar nombre de archivo
+      const nombreLimpio = nombre.replace(/[^a-zA-Z0-9]/g, '');
+      const apellidoLimpio = apellido.replace(/[^a-zA-Z0-9]/g, '');
+      const fechaStr = new Date().toISOString().split('T')[0];
+      const filename = `certificado_${nombreLimpio}_${apellidoLimpio}_${fechaStr}.pdf`;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+      logInfo('Certificado generado exitosamente desde Telegram', {
+        dni: certificadoData.dni,
+        filename,
+        bufferSize: pdfBuffer.length
+      });
+
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      logError('Error al generar certificado desde Telegram', error as Error);
+      
+      if (error instanceof ValidationError) {
+        throw error;
+      }
+      
+      throw new InternalServerError('Error al generar el certificado desde Telegram');
+    }
+  }
+
   // Endpoint de salud del servicio
   async healthCheck(req: Request, res: Response): Promise<void> {
     try {

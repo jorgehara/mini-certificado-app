@@ -14,6 +14,10 @@ router.post('/generate',
   asyncHandler(certificadoController.generateCertificado.bind(certificadoController))
 );
 
+router.post('/telegram', 
+  asyncHandler(certificadoController.generateFromTelegram.bind(certificadoController))
+);
+
 router.post('/preview', 
   asyncHandler(certificadoController.previewCertificado.bind(certificadoController))
 );
