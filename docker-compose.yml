@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  certificado-app:
+    build: ./backend
+    container_name: certificado_app
+    restart: always
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - certificado_data:/app/data
+
+  certificado-frontend:
+    build: .
+    container_name: certificado_frontend
+    restart: always
+    ports:
+      - "9876:80"
+    depends_on:
+      - certificado-app
+
+volumes:
+  certificado_data:
