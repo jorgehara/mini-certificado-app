@@ -27,6 +27,7 @@
     },
     {
       "parameters": {
+        "method": "POST",
         "url": "http://69.62.89.195:3000/api/certificados/telegram",
         "sendHeaders": true,
         "headerParameters": {
@@ -67,7 +68,7 @@
         "binaryData": true,
         "binaryPropertyName": "data",
         "additionalFields": {
-          "caption": "🏥 Tu certificado médico ha sido generado exitosamente"
+          "caption": "🏥 Tu certificado médico ha sido generado exitosamente\n\n📄 Documento: Certificado de Reposo Médico\n⏰ Generado: {{ new Date().toLocaleString('es-ES') }}"
         }
       },
       "id": "d0e9f8g7-6b5c-4d3e-2f1g-0h9i8j7k6l5m",
@@ -92,7 +93,7 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "❌ Error al generar el certificado. Por favor verifica el formato del mensaje.\n\n📝 Formato correcto:\nDNI [TAB] APELLIDO NOMBRE [TAB] TIEMPO. Diagnóstico CODIGO\n\n💡 Ejemplo:\n32664697\tJARA JORGE\t24HS. Sindrome gripal B349"
+        "text": "❌ Error al generar el certificado médico\n\n📝 **Formato correcto:**\nDNI,APELLIDO,NOMBRE,TIEMPO,PALABRA1,PALABRA2,CODIGO\n\n💡 **Ejemplo:**\n33824963,JARA,JORGE,24HS.,Sindrome,gripal,B349\n\n📋 **Explicación:**\n• DNI: Número de documento\n• APELLIDO: Apellido del paciente\n• NOMBRE: Nombre del paciente\n• TIEMPO: Ej. 24HS., 48HS., etc.\n• PALABRA1-2: Descripción del diagnóstico\n• CODIGO: Código CIE-10 del diagnóstico\n\n🔄 Inténtalo nuevamente con el formato correcto."
       },
       "id": "e1f0g9h8-7c6d-5e4f-3g2h-1i0j9k8l7m6n",
       "name": "Error Message",
@@ -108,11 +109,100 @@
           "name": "Telegram Bot API"
         }
       }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "telegramApi",
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "👋 ¡Hola! Soy tu asistente para generar certificados médicos.\n\n📝 **Para generar un certificado, envía:**\nDNI,APELLIDO,NOMBRE,TIEMPO,PALABRA1,PALABRA2,CODIGO\n\n💡 **Ejemplo:**\n33824963,JARA,JORGE,24HS.,Sindrome,gripal,B349\n\n📋 **Esto generará:**\n• Certificado para: JORGE JARA\n• DNI: 33824963\n• Reposo: 24 horas\n• Diagnóstico: Sindrome gripal B349\n\n🏥 El certificado será enviado como archivo PDF."
+      },
+      "id": "f2g1h0i9-8d7e-6f5g-4h3i-2j1k0l9m8n7o",
+      "name": "Welcome Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        140
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram_bot_credentials",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "start_condition",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "help_condition",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/help",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "ayuda_condition",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "ayuda",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "g3h2i1j0-9e8f-7g6h-5i4j-3k2l1m0n9o8p",
+      "name": "Check Message Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        350,
+        220
+      ]
     }
   ],
   "connections": {
     "Telegram Trigger": {
       "main": [
+        [
+          {
+            "node": "Check Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Type": {
+      "main": [
+        [
+          {
+            "node": "Welcome Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "HTTP Request",
@@ -145,10 +235,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1",
+  "versionId": "2",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "certificado-telegram-bot",
+  "id": "certificado-telegram-bot-v2",
   "tags": []
 }
