@@ -1,0 +1,267 @@
+{
+  "name": "Certificado Médico Telegram Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ]
+      },
+      "id": "telegram_trigger_node",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram_bot_credentials",
+          "name": "telegram_bot_credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check_text_exists",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "check_comma_format",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": ",",
+              "operator": {
+                "type": "string",
+                "operation": "contains",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check_message_type",
+      "name": "Check Message Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://69.62.89.195:3000/api/certificados/telegram",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "={{ { \"data\": $('Telegram Trigger').item.json.message.text } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "redirect": {},
+          "proxy": {},
+          "timeout": {},
+          "retry": {
+            "retry": {}
+          }
+        }
+      },
+      "id": "http_request_api",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        680,
+        200
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendDocument",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "caption": "🏥 Tu certificado médico ha sido generado exitosamente\n\n📋 Paciente: {{ $('Telegram Trigger').item.json.message.text.split(',')[2] }} {{ $('Telegram Trigger').item.json.message.text.split(',')[1] }}\n📅 Fecha: {{ $now.format('DD/MM/YYYY') }}",
+          "filename": "certificado_medico_{{ $('Telegram Trigger').item.json.message.text.split(',')[0] }}.pdf"
+        }
+      },
+      "id": "send_pdf_document",
+      "name": "Send Document",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram_bot_credentials",
+          "name": "telegram_bot_credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "❌ **Error al generar el certificado**\n\n🔍 **Formato incorrecto detectado**\n\nPor favor, envía los datos en este formato exacto:\n`DNI,APELLIDO,NOMBRE,TIEMPO,PALABRA1,PALABRA2,CODIGO`\n\n✅ **Ejemplo correcto:**\n`33824963,JARA,JORGE,24HS.,Sindrome,gripal,B349`\n\n📝 **Explicación:**\n• DNI: Número de documento (solo números)\n• APELLIDO: Apellido del paciente\n• NOMBRE: Nombre del paciente  \n• TIEMPO: Duración del reposo (ej: 24HS., 48HS.)\n• PALABRA1,PALABRA2: Diagnóstico separado por comas\n• CODIGO: Código médico\n\n⚠️ **Importante:** No uses espacios después de las comas",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send_error_message",
+      "name": "Send Error Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        380
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram_bot_credentials",
+          "name": "telegram_bot_credentials"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "👋 **¡Hola! Soy el bot de certificados médicos**\n\n🩺 **Dra. Ivana Kardasz - Medicina General**\n\n📝 **Para generar un certificado médico, envía los datos en este formato:**\n\n`DNI,APELLIDO,NOMBRE,TIEMPO,PALABRA1,PALABRA2,CODIGO`\n\n✅ **Ejemplo:**\n`33824963,JARA,JORGE,24HS.,Sindrome,gripal,B349`\n\n📋 **Descripción de campos:**\n🔸 **DNI:** Número de documento\n🔸 **APELLIDO:** Apellido del paciente\n🔸 **NOMBRE:** Nombre del paciente\n🔸 **TIEMPO:** Duración del reposo (24HS., 48HS., etc.)\n🔸 **PALABRA1,PALABRA2:** Diagnóstico (Sindrome,gripal)\n🔸 **CODIGO:** Código CIE-10 (B349, J06, etc.)\n\n⚡ **El certificado se generará automáticamente como PDF**\n\n❓ **¿Necesitas ayuda?** Solo envía cualquier mensaje y te guiaré.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send_welcome_message",
+      "name": "Send Welcome",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        380
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram_bot_credentials",
+          "name": "telegram_bot_credentials"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message Type": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": {
+      "active": false
+    }
+  },
+  "versionId": "certificado_bot_v2_final",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "drIvanaK_bot_instance"
+  },
+  "id": "certificado_telegram_bot_final",
+  "tags": [
+    {
+      "createdAt": "2025-11-04T21:59:08.085Z",
+      "updatedAt": "2025-11-04T21:59:08.085Z",
+      "id": "medical_certificate",
+      "name": "telegram-bot"
+    },
+    {
+      "createdAt": "2025-11-04T21:59:08.085Z",
+      "updatedAt": "2025-11-04T21:59:08.085Z",
+      "id": "pdf_generator",
+      "name": "medical"
+    }
+  ]
+}
