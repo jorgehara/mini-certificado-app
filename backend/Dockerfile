@@ -8,14 +8,17 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Instalar dependencias
-RUN npm ci --only=production
+# Instalar todas las dependencias (incluyendo devDependencies para compilar)
+RUN npm ci
 
 # Copiar código fuente
 COPY src/ ./src/
 
 # Compilar TypeScript
 RUN npm run build
+
+# Remover devDependencies después de compilar para reducir tamaño
+RUN npm prune --production
 
 # Exponer puerto
 EXPOSE 3000
