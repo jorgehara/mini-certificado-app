@@ -178,33 +178,31 @@ export class CertificadoController {
         throw new ValidationError('Se requiere el campo "mensaje" con el texto a procesar');
       }
 
-      // Parsear el mensaje: "32664697	JARA JORGE	24HS. Sindrome gripal B349"
-      const partes = mensaje.trim().split('\t').filter(p => p.trim() !== '');
+      // Parsear el mensaje: "33824963,JARA,JORGE,24HS.,Sindrome,gripal,B349"
+      const partes = mensaje.trim().split(',').map(p => p.trim()).filter(p => p !== '');
       
-      if (partes.length < 3) {
-        throw new ValidationError('Formato de mensaje incorrecto. Esperado: DNI [TAB] APELLIDO NOMBRE [TAB] TIEMPO. Diagnóstico CODIGO');
+      if (partes.length < 7) {
+        throw new ValidationError('Formato de mensaje incorrecto. Esperado: DNI,APELLIDO,NOMBRE,TIEMPO,PALABRA1,PALABRA2,CODIGO');
       }
 
-      const dni = partes[0]?.trim() || '';
-      const nombreCompleto = partes[1]?.trim() || '';
-      const descripcionCompleta = partes[2]?.trim() || '';
+      const dni = partes[0] || '';
+      const apellido = partes[1] || '';
+      const nombre = partes[2] || '';
+      const tiempoTexto = partes[3] || '';
+      const palabra1 = partes[4] || '';
+      const palabra2 = partes[5] || '';
+      const codigoDiagnostico = partes[6] || 'Z76.1';
 
-      if (!dni || !nombreCompleto || !descripcionCompleta) {
-        throw new ValidationError('Datos incompletos en el mensaje');
+      if (!dni || !apellido || !nombre) {
+        throw new ValidationError('DNI, apellido y nombre son obligatorios');
       }
 
-      // Separar nombre y apellido
-      const partesNombre = nombreCompleto.split(' ');
-      const apellido = partesNombre[0] || '';
-      const nombre = partesNombre.slice(1).join(' ') || '';
-
-      // Extraer horas de reposo y diagnóstico
-      const matchHoras = descripcionCompleta.match(/(\d+)\s*HS?/i);
+      // Extraer horas de reposo del texto de tiempo (ej: "24HS." -> 24)
+      const matchHoras = tiempoTexto.match(/(\d+)/);
       const horasReposo = matchHoras?.[1] ? parseInt(matchHoras[1]) : 24;
 
-      // Extraer código de diagnóstico (ejemplo: B349)
-      const matchCodigo = descripcionCompleta.match(/([A-Z]\d+)/);
-      const codigoDiagnostico = matchCodigo?.[1] || 'Z76.1';
+      // Construir descripción completa del diagnóstico
+      const descripcionCompleta = `${tiempoTexto} ${palabra1} ${palabra2} ${codigoDiagnostico}`.trim();
 
       // Crear objeto de datos del certificado
       const certificadoData: CertificadoData = {
