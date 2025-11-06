@@ -242,16 +242,16 @@ export class CertificadoGenerator {
   const caveatNombreFontSize = 14;
   // DNI
   const caveatDniY = dniY - 5 ;
-  const caveatDniFontSize = 14;
+  const caveatDniFontSize = 16;
   // Síntomas
-  const caveatSintomasY = presentarY - 4;
-  const caveatSintomasFontSize = 14;
+  const caveatSintomasY = presentarY - 7;
+  const caveatSintomasFontSize = 16;
   // Horas de reposo
-  const caveatReposoY = reposoY - 3;
-  const caveatReposoFontSize = 12;
+  const caveatReposoY = reposoY - 7;
+  const caveatReposoFontSize = 16;
   // Diagnóstico
-  const caveatDiagnosticoY = diagnosticoY - 4;
-  const caveatDiagnosticoFontSize = 12;
+  const caveatDiagnosticoY = diagnosticoY - 7;
+  const caveatDiagnosticoFontSize = 16;
     try {
       doc.fontSize(tamanoFuentePaciente)
          .font(tipoFuentePaciente)
@@ -290,16 +290,17 @@ export class CertificadoGenerator {
    }
    const nombreStartX = +50; // Posición donde termina "Sr/a "
     
-    // Variables para línea de puntos del nombre - EDITA AQUÍ LAS COORDENADAS
-    const puntosNombreX = nombreStartX;              // Posición X de los puntos del nombre
-    const puntosNombreY = nombreY + 4;             // Posición Y de los puntos del nombre
-    const espacioDisponibleNombre = 200;             // Espacio disponible para puntos
-    
-    // Línea de puntos debajo del nombre
-    const nombreWidth = doc.widthOfString(nombreCompleto);
-    const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 3));
-    console.log(`NOMBRE: Inicio X=${nombreStartX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
-    doc.text(puntosNombre, puntosNombreX, puntosNombreY);
+  // Variables para línea de puntos del nombre - EDITA AQUÍ LAS COORDENADAS
+  const puntosNombreX = nombreStartX;              // Posición X de los puntos del nombre
+  const puntosNombreYOffset = 0;                   // Ajuste de altura Y de la línea de puntos del nombre
+  const puntosNombreY = nombreY + puntosNombreYOffset; // Posición Y de los puntos del nombre
+  const espacioDisponibleNombre = 200;             // Espacio disponible para puntos
+
+  // Línea de puntos debajo del nombre
+  const nombreWidth = doc.widthOfString(nombreCompleto);
+  const puntosNombre = '.'.repeat(Math.floor((espacioDisponibleNombre - nombreWidth) / 3));
+  console.log(`NOMBRE: Inicio X=${nombreStartX}, Ancho texto=${nombreWidth}, Puntos generados=${puntosNombre.length}`);
+  doc.text(puntosNombre, puntosNombreX, puntosNombreY);
     // ================================================================
 
    // ==================== LÍNEA DE PUNTOS PARA DNI ====================
@@ -324,7 +325,7 @@ export class CertificadoGenerator {
     
   // Variables para línea de puntos del DNI - EDITA AQUÍ LAS COORDENADAS
   const puntosDniX = dniStartX;                    // Posición X de los puntos del DNI
-  const puntosDniYOffset = 4;                      // Ajuste de altura Y de la línea de puntos del DNI
+  const puntosDniYOffset = - 1;                      // Ajuste de altura Y de la línea de puntos del DNI
   const puntosDniY = dniY + puntosDniYOffset;      // Posición Y de los puntos del DNI
   const espacioDisponibleDni = 100;                // Espacio disponible para puntos
 
