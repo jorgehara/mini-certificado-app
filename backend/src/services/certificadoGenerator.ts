@@ -276,7 +276,7 @@ export class CertificadoGenerator {
      .fillColor(colorFuenteCaveat);
    doc.text('Sr/a ', nombreX, nombreY, { continued: true });
    // Nombre y apellido en Caveat
-   const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
+  const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
    try {
     doc.fontSize(caveatNombreFontSize)
       .font('Caveat-Medium')
