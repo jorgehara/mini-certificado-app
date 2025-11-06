@@ -106,6 +106,13 @@ export const CertificadoForm = () => {
                     error={!!errors.nombre}
                     helperText={errors.nombre?.message}
                     fullWidth
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        fontFamily: 'Caveat, cursive',
+                        fontSize: '1.2em',
+                        fontWeight: 500
+                      }
+                    }}
                   />
                 )}
               />
@@ -121,6 +128,13 @@ export const CertificadoForm = () => {
                     error={!!errors.apellido}
                     helperText={errors.apellido?.message}
                     fullWidth
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        fontFamily: 'Caveat, cursive',
+                        fontSize: '1.2em',
+                        fontWeight: 500
+                      }
+                    }}
                   />
                 )}
               />
@@ -144,6 +158,13 @@ export const CertificadoForm = () => {
                     error={!!errors.dni}
                     helperText={errors.dni?.message}
                     fullWidth
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        fontFamily: 'Caveat, cursive',
+                        fontSize: '1.2em',
+                        fontWeight: 500
+                      }
+                    }}
                   />
                 )}
               />
@@ -205,6 +226,13 @@ export const CertificadoForm = () => {
                     helperText={errors.fechaConsulta?.message}
                     fullWidth
                     InputLabelProps={{ shrink: true }}
+                    sx={{
+                      '& .MuiInputBase-input': {
+                        fontFamily: 'Caveat, cursive',
+                        fontSize: '1.1em',
+                        fontWeight: 500
+                      }
+                    }}
                   />
                 )}
               />

@@ -1,7 +1,12 @@
 import PDFDocument from 'pdfkit';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { CertificadoData, CertificadoConfig } from '../types/index.js';
 import { logInfo, logError } from '../utils/logger.js';
+
+// Para obtener __dirname en módulos ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuración por defecto del certificado
 const defaultConfig: CertificadoConfig = {
@@ -22,7 +27,9 @@ const defaultConfig: CertificadoConfig = {
   fonts: {
     title: 'Helvetica-Bold',
     body: 'Helvetica',
-    signature: 'Helvetica-Oblique'
+    signature: 'Helvetica-Oblique',
+    caveat: 'Caveat-Regular',
+    caveatMedium: 'Caveat-Medium'
   }
 };
 
@@ -52,6 +59,17 @@ export class CertificadoGenerator {
           size: [this.config.width, this.config.height], // Tamaño personalizado 10cm x 21cm
           margins: this.config.margins
         });
+
+        // Registrar fuentes Caveat para los datos del paciente
+        try {
+          doc.registerFont('Caveat-Regular', path.join(__dirname, '../fonts/Caveat-Regular.ttf'));
+          doc.registerFont('Caveat-Medium', path.join(__dirname, '../fonts/Caveat-Medium.ttf'));
+          doc.registerFont('Caveat-Bold', path.join(__dirname, '../fonts/Caveat-Bold.ttf'));
+          console.log('Fuentes Caveat registradas exitosamente');
+        } catch (fontError) {
+          console.warn('No se pudieron registrar las fuentes Caveat, usando fuentes por defecto:', fontError);
+          // Fallback: usar fuentes del sistema si las personalizadas fallan
+        }
 
         const chunks: Buffer[] = [];
 
@@ -184,58 +202,93 @@ export class CertificadoGenerator {
   }
 
   private drawPatientInfo(doc: PDFKit.PDFDocument, data: CertificadoData): void {
-    // Variables de fuente y espaciado - EDITA AQUÍ LA TIPOGRAFÍA
-    const tamanoFuentePaciente = 12;     // Tamaño de fuente para información del paciente
-    const interlineadoPaciente = 30;     // Espaciado entre líneas (diferencia entre Y)
-    const tipoFuentePaciente = this.config.fonts.body;  // Tipo de fuente
-    const colorFuentePaciente = 'rgba(32, 30, 30, 0.68)';              // Color de fuente
-    
-    // Variables de fuente para información médica - EDITA AQUÍ LA TIPOGRAFÍA MÉDICA
-    const tamanoFuenteMedica = 12;              // Tamaño de fuente para reposo y diagnóstico
-    const tipoFuenteMedica = this.config.fonts.body;     // Tipo de fuente
-    const colorFuenteMedica = 'rgba(32, 30, 30, 0.68)';                 // Color de fuente
-    const interlineadoMedico = 30;              // Espaciado entre líneas médicas
-    
-    // Variables de posición para cada línea - USANDO EL INTERLINEADO
-    const constanciaY = 120;
-    const constanciaX = 25;
-    
-    const nombreY = constanciaY + interlineadoPaciente;      // 150
-    const nombreX = 25;
-    
-    const dniY = nombreY + interlineadoPaciente;             // 180
-    const dniX = 25;
-    
-    const consultaY = dniY + interlineadoPaciente;           // 210
-    const consultaX = 25;
-    
-    const presentarY = consultaY + interlineadoPaciente;     // 240
-    const presentarX = 25;
-    
-    // Variables de posición para información médica - USANDO EL INTERLINEADO
-    const reposoY = presentarY + interlineadoPaciente;       // 270
-    const reposoX = 25;
-    
-    const diagnosticoY = reposoY + interlineadoMedico;       // 290
-    const diagnosticoX = 25;
-    
-    // FIRMA DIGITALIZADA - Posición alineada con las demás líneas
-    const firmaY = diagnosticoY + (interlineadoMedico * 2);  // 330
-    const firmaX = 160;
-    
-    // ==================== INFORMACIÓN DEL PACIENTE ====================
-    doc.fontSize(tamanoFuentePaciente)
-       .font(tipoFuentePaciente)
-       .fillColor(colorFuentePaciente);
+  // Variables de fuente y espaciado - EDITA AQUÍ LA TIPOGRAFÍA
+  const tamanoFuentePaciente = 14;     // Tamaño de fuente para información del paciente (un poco más grande para Caveat)
+  const interlineadoPaciente = 30;     // Espaciado entre líneas (diferencia entre Y)
+  // Usar fuente Caveat si está disponible, sino usar Helvetica como fallback
+  const tipoFuentePaciente = 'Caveat-Medium';
+  // Color global para textos Caveat
+  const colorFuenteCaveat = 'rgba(80, 58, 101, 0.68)';
 
-    // Texto del certificado según el formato solicitado
-    doc.text('Dejo constancia que el/la', constanciaX, constanciaY);
+  // Variables de fuente para información médica - EDITA AQUÍ LA TIPOGRAFÍA MÉDICA
+  const tamanoFuenteMedica = 12;              // Tamaño de fuente para reposo y diagnóstico
+  const tipoFuenteMedica = this.config.fonts.body;     // Tipo de fuente
+  const colorFuenteMedica = 'rgba(32, 30, 30, 0.68)';                 // Color de fuente
+  const interlineadoMedico = 30;              // Espaciado entre líneas médicas
+
+  // Variables de posición para cada línea - USANDO EL INTERLINEADO
+  const constanciaY = 120;
+  const constanciaX = 25;
+  const nombreY = constanciaY + interlineadoPaciente;      // 150
+  const nombreX = 25;
+  const dniY = nombreY + interlineadoPaciente;             // 180
+  const dniX = 25;
+  const consultaY = dniY + interlineadoPaciente;           // 210
+  const consultaX = 25;
+  const presentarY = consultaY + interlineadoPaciente;     // 240
+  const presentarX = 25;
+  // Variables de posición para información médica - USANDO EL INTERLINEADO
+  const reposoY = presentarY + interlineadoPaciente;       // 270
+  const reposoX = 25;
+  const diagnosticoY = reposoY + interlineadoMedico;       // 290
+  const diagnosticoX = 25;
+  // FIRMA DIGITALIZADA - Posición alineada con las demás líneas
+  const firmaY = diagnosticoY + (interlineadoMedico * 2);  // 330
+  const firmaX = 160;
+
+  // Variables de altura (Y), tamaño y color para cada texto Caveat
+  // Nombre y apellido
+  const caveatNombreY = nombreY - 5;
+  const caveatNombreFontSize = 14;
+  // DNI
+  const caveatDniY = dniY - 5 ;
+  const caveatDniFontSize = 14;
+  // Síntomas
+  const caveatSintomasY = presentarY - 4;
+  const caveatSintomasFontSize = 14;
+  // Horas de reposo
+  const caveatReposoY = reposoY - 3;
+  const caveatReposoFontSize = 12;
+  // Diagnóstico
+  const caveatDiagnosticoY = diagnosticoY - 4;
+  const caveatDiagnosticoFontSize = 12;
+    try {
+      doc.fontSize(tamanoFuentePaciente)
+         .font(tipoFuentePaciente)
+         .fillColor(colorFuenteCaveat);
+    } catch (fontError) {
+      console.warn('No se pudo aplicar la fuente Caveat, usando fuente por defecto:', fontError);
+      doc.fontSize(tamanoFuentePaciente)
+         .font(this.config.fonts.body)
+         .fillColor(colorFuenteCaveat);
+    }
+
+   // Texto del certificado según el formato solicitado
+   doc.fontSize(tamanoFuentePaciente)
+     .font(this.config.fonts.body)
+     .fillColor(colorFuenteCaveat);
+   doc.text('Dejo constancia que el/la', constanciaX, constanciaY);
     
-    // ==================== LÍNEA DE PUNTOS PARA NOMBRE ====================
-    doc.text('Sr/a ', nombreX, nombreY, { continued: true });
-    const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
-    const nombreStartX = +50; // Posición donde termina "Sr/a "
-    doc.text(nombreCompleto);
+   // ==================== LÍNEA DE PUNTOS PARA NOMBRE ====================
+   // 'Sr/a' en fuente normal
+   doc.fontSize(tamanoFuentePaciente)
+     .font(this.config.fonts.body)
+     .fillColor(colorFuenteCaveat);
+   doc.text('Sr/a ', nombreX, nombreY, { continued: true });
+   // Nombre y apellido en Caveat
+   const nombreCompleto = `${data.nombre.toUpperCase()} ${data.apellido.toUpperCase()}`;
+   try {
+    doc.fontSize(caveatNombreFontSize)
+      .font('Caveat-Medium')
+      .fillColor(colorFuenteCaveat);
+    doc.text(nombreCompleto, nombreX, caveatNombreY);
+   } catch (fontError) {
+    doc.fontSize(caveatNombreFontSize)
+      .font(this.config.fonts.body)
+      .fillColor(colorFuenteCaveat);
+    doc.text(nombreCompleto, nombreX, caveatNombreY);
+   }
+   const nombreStartX = +50; // Posición donde termina "Sr/a "
     
     // Variables para línea de puntos del nombre - EDITA AQUÍ LAS COORDENADAS
     const puntosNombreX = nombreStartX;              // Posición X de los puntos del nombre
@@ -249,44 +302,96 @@ export class CertificadoGenerator {
     doc.text(puntosNombre, puntosNombreX, puntosNombreY);
     // ================================================================
 
-    // ==================== LÍNEA DE PUNTOS PARA DNI ====================
-    doc.text('DNI: ', dniX, dniY, { continued: true });
-    const dniStartX = + 50; // Posición donde termina "DNI: "
-    doc.text(`${data.dni},`);
+   // ==================== LÍNEA DE PUNTOS PARA DNI ====================
+   // 'DNI:' en fuente normal
+   doc.fontSize(tamanoFuentePaciente)
+     .font(this.config.fonts.body)
+     .fillColor(colorFuenteCaveat);
+   doc.text('DNI: ', dniX, dniY, { continued: true });
+   // Número de DNI en Caveat
+   const dniStartX = +50; // Posición donde termina "DNI: "
+   try {
+    doc.fontSize(caveatDniFontSize)
+      .font('Caveat-Medium')
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.dni},`, dniX, caveatDniY);
+   } catch (fontError) {
+    doc.fontSize(caveatDniFontSize)
+      .font(this.config.fonts.body)
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.dni},`, dniX, caveatDniY);
+   }
     
-    // Variables para línea de puntos del DNI - EDITA AQUÍ LAS COORDENADAS
-    const puntosDniX = dniStartX;                    // Posición X de los puntos del DNI
-    const puntosDniY = dniY + 4;                     // Posición Y de los puntos del DNI
-    const espacioDisponibleDni = 100;                // Espacio disponible para puntos
-    
-    // Línea de puntos debajo del DNI
-    const dniWidth = doc.widthOfString(data.dni + ',');
-    const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 2));
-    console.log(`DNI: Inicio X=${dniStartX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
-    doc.text(puntosDni, puntosDniX, puntosDniY);
+  // Variables para línea de puntos del DNI - EDITA AQUÍ LAS COORDENADAS
+  const puntosDniX = dniStartX;                    // Posición X de los puntos del DNI
+  const puntosDniYOffset = 4;                      // Ajuste de altura Y de la línea de puntos del DNI
+  const puntosDniY = dniY + puntosDniYOffset;      // Posición Y de los puntos del DNI
+  const espacioDisponibleDni = 100;                // Espacio disponible para puntos
+
+  // Línea de puntos debajo del DNI
+  const dniWidth = doc.widthOfString(data.dni + ',');
+  const puntosDni = '.'.repeat(Math.floor((espacioDisponibleDni - dniWidth) / 2));
+  console.log(`DNI: Inicio X=${dniStartX}, Ancho texto=${dniWidth}, Puntos generados=${puntosDni.length}`);
+  doc.text(puntosDni, puntosDniX, puntosDniY);
     // ================================================================
 
-    doc.text('consulta el día de la fecha', consultaX, consultaY);
+   doc.fontSize(tamanoFuentePaciente)
+     .font(this.config.fonts.body)
+     .fillColor(colorFuenteCaveat);
+   doc.text('consulta el día de la fecha', consultaX, consultaY);
     
-    // Línea "por presentar" (sin puntos, como en el ejemplo real)
-    doc.text('por presentar ', presentarX, presentarY, { continued: true });
-    const descripcion = data.textoEntrada || 'síndrome gripal';
-    doc.text(`${descripcion},`);
+   // Línea "por presentar" (mitad normal, mitad Caveat)
+   doc.fontSize(tamanoFuentePaciente)
+     .font(this.config.fonts.body)
+     .fillColor(colorFuenteCaveat);
+   doc.text('por presentar ', presentarX, presentarY, { continued: true });
+   const descripcion = data.textoEntrada || 'síndrome gripal';
+   try {
+    doc.fontSize(caveatSintomasFontSize)
+      .font('Caveat-Medium')
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${descripcion},`, presentarX, caveatSintomasY);
+   } catch (fontError) {
+    doc.fontSize(caveatSintomasFontSize)
+      .font(this.config.fonts.body)
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${descripcion},`, presentarX, caveatSintomasY);
+   }
     
     // ==================== INFORMACIÓN MÉDICA ====================
-    // Línea de reposo - Aplicar fuente antes de cada línea
-    doc.fontSize(tamanoFuenteMedica)
-       .font(tipoFuenteMedica)
-       .fillColor(colorFuenteMedica);
-    doc.text('se sugiere reposo por ', reposoX, reposoY, { continued: true });
-    doc.text(`${data.horasReposo}hs.`);
-    
-    // Línea de diagnóstico - Aplicar fuente antes de cada línea
-    doc.fontSize(tamanoFuenteMedica)
-       .font(tipoFuenteMedica)
-       .fillColor(colorFuenteMedica);
-    doc.text('Diag: ', diagnosticoX, diagnosticoY, { continued: true });
-    doc.text(`${data.codigoDiagnostico}`);
+   // Línea de reposo - mitad fuente normal, mitad Caveat
+   doc.fontSize(tamanoFuenteMedica)
+     .font(tipoFuenteMedica)
+     .fillColor(colorFuenteMedica);
+   doc.text('se sugiere reposo por ', reposoX, reposoY, { continued: true });
+   try {
+    doc.fontSize(caveatReposoFontSize)
+      .font('Caveat-Medium')
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.horasReposo}hs.`, reposoX, caveatReposoY, { continued: false });
+   } catch (fontError) {
+    doc.fontSize(caveatReposoFontSize)
+      .font(tipoFuenteMedica)
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.horasReposo}hs.`, reposoX, caveatReposoY, { continued: false });
+   }
+
+   // Línea de diagnóstico - mitad fuente normal, mitad Caveat
+   doc.fontSize(tamanoFuenteMedica)
+     .font(tipoFuenteMedica)
+     .fillColor(colorFuenteMedica);
+   doc.text('Diagnóstico: ', diagnosticoX, diagnosticoY, { continued: true });
+   try {
+    doc.fontSize(caveatDiagnosticoFontSize)
+      .font('Caveat-Medium')
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.codigoDiagnostico}`, diagnosticoX, caveatDiagnosticoY);
+   } catch (fontError) {
+    doc.fontSize(caveatDiagnosticoFontSize)
+      .font(tipoFuenteMedica)
+      .fillColor(colorFuenteCaveat);
+    doc.text(`${data.codigoDiagnostico}`, diagnosticoX, caveatDiagnosticoY);
+   }
     
     // Firma digitalizada de la doctora
     this.drawDigitalSignature(doc, firmaX, firmaY);
@@ -315,11 +420,19 @@ export class CertificadoGenerator {
     const year = fecha.getFullYear();
     const fechaStr = `${day}/${month}/${year}`;
 
-    // Fecha del certificado
-    doc.fontSize(12)
-       .font(this.config.fonts.body)
-       .fillColor('#000000')
-       .text(fechaStr, fechaX, fechaY);
+    // Fecha del certificado - usando fuente Caveat
+    try {
+      doc.fontSize(14)
+         .font('Caveat-Medium')
+         .fillColor('#000000')
+         .text(fechaStr, fechaX, fechaY);
+    } catch (fontError) {
+      console.warn('No se pudo aplicar la fuente Caveat para la fecha, usando fuente por defecto:', fontError);
+      doc.fontSize(14)
+         .font(this.config.fonts.body)
+         .fillColor('#000000')
+         .text(fechaStr, fechaX, fechaY);
+    }
 
     // Información de contacto
     // doc.fontSize(10)

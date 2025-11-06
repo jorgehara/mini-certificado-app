@@ -1,3 +1,45 @@
+/* Declaración de la fuente Caveat */
+@font-face {
+  font-family: 'Caveat';
+  src: url('/Caveat/Caveat-VariableFont_wght.ttf') format('truetype-variations'),
+       url('/Caveat/static/Caveat-Regular.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/Caveat/static/Caveat-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/Caveat/static/Caveat-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/Caveat/static/Caveat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Caveat';
+  src: url('/Caveat/static/Caveat-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -11,6 +53,23 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clases para usar la fuente Caveat en datos del paciente */
+.caveat-font {
+  font-family: 'Caveat', cursive, sans-serif;
+}
+
+.patient-data {
+  font-family: 'Caveat', cursive, sans-serif;
+  font-weight: 500;
+  font-size: 1.2em;
+}
+
+.date-data {
+  font-family: 'Caveat', cursive, sans-serif;
+  font-weight: 500;
+  font-size: 1.1em;
 }
 
 a {

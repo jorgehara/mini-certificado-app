@@ -29,6 +29,8 @@ export interface CertificadoConfig {
     title: string;
     body: string;
     signature: string;
+    caveat?: string;
+    caveatMedium?: string;
   };
 }
 
